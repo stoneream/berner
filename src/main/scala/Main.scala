@@ -32,17 +32,20 @@ object Main extends IOApp {
                 case Left(_) => Stream.unit
                 case Right(json) =>
                   val op = json.hcursor.downField("op").as[Int].getOrElse(-1)
-                  for {
-                    _ <- Stream.emit(json).covary[IO].evalTap(json => IO.println(json.spaces2))
-                    _ <- op match {
+                  Stream.emit(json).covary[IO].evalTap(json => IO(println(json.noSpaces))).flatMap { _ =>
+                    op match {
                       case 10 => // hello
                         val interval = json.hcursor.downField("d").downField("heartbeat_interval").as[Int].getOrElse(-1)
                         val heartbeat = WSFrame.Text("""{"op": 1, "d": null}""")
-                        Stream.awakeEvery[IO](interval.millis).evalMap { _ => client.send(heartbeat) }
+                        val heartbeatStream = Stream.awakeEvery[IO](interval.millis).evalMap { _ => client.send(heartbeat) }
+                        heartbeatStream.concurrently(client.receiveStream.evalMap {
+                          case WSFrame.Text(text, _) => IO.println(text)
+                          case _ => IO.unit
+                        })
                       case _ =>
                         Stream.unit
                     }
-                  } yield ()
+                  }
               }
             }
             .compile
