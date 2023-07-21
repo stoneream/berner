@@ -48,7 +48,7 @@ lazy val publishSettings = Seq(
 // === project setting ===
 
 lazy val root = (project in file(".")).settings(
-  name := "scala-template",
+  name := "berner",
   libraryDependencies ++= Dependencies.deps,
   publish / skip := true
 )
