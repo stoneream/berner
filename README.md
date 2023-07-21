@@ -1,4 +1,6 @@
-# scala-template
+# berner
+
+http4sでdiscordのbotを書いてみるテスト
 
 ## GitHub Actionsの設定
 
