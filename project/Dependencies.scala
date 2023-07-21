@@ -66,7 +66,8 @@ object Dependencies {
   // circe
   lazy val circe: Seq[ModuleID] = Seq(
     "io.circe" %% "circe-generic" % Versions.circe,
-    "io.circe" %% "circe-literal" % Versions.circe
+    "io.circe" %% "circe-literal" % Versions.circe,
+    "io.circe" %% "circe-parser" % Versions.circe
   )
 
   // database
