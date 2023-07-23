@@ -38,7 +38,7 @@ object Main extends IOApp {
           .collectFirst({ case WSFrame.Text(text, _) => text })
           .flatMap { text =>
             parse(text) match {
-              case Left(parsingFailure) => throw Exception("failed to parse json", parsingFailure)
+              case Left(parsingFailure) => Stream.raiseError[IO](throw Exception("failed to parse json", parsingFailure))
               case Right(json) =>
                 val op = json.hcursor.downField("op").as[Int].getOrElse(-1)
                 Stream.emit(json).covary[IO].evalTap(json => IO(println(json.noSpaces))).flatMap { _ =>
@@ -51,7 +51,7 @@ object Main extends IOApp {
                         case _ => IO.unit
                       })
                     case op =>
-                      throw Exception(s"unexpected operation code (op=$op)")
+                      Stream.raiseError[IO](throw Exception(s"unexpected operation code (op=$op)"))
                   }
                 }
             }
