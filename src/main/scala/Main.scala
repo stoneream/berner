@@ -1,4 +1,6 @@
 import cats.effect.*
+import discord.GatewayOpCode
+import discord.payload.{Identity, Payload}
 import fs2.Stream
 import io.circe.*
 import io.circe.generic.auto.*
@@ -28,7 +30,7 @@ object Main extends IOApp {
 
   private def initializeClient(config: Config): IO[Unit] = {
     JdkWSClient[IO](HttpClient.newHttpClient).connectHighLevel(WSRequest(gatewayUri)).use { client =>
-      val identity = Payload[Identity](2, Some(Identity(config.discordToken, 513, Map())), None, None)
+      val identity = Payload[Identity](GatewayOpCode.Identify, Some(Identity(config.discordToken, 513, Map())), None, None)
       val payload = WSFrame.Text(identity.asJson.noSpaces)
 
       client.send(payload).flatMap { _ =>
@@ -73,24 +75,5 @@ object Main extends IOApp {
         } yield {}
       }
     }
-  }
-
-  private case class Payload[T](op: Int, d: Option[T], s: Option[Int], t: Option[String])
-
-  private case class Identity(token: String, intents: Int, properties: Map[String, String])
-
-  // https://discord.com/developers/docs/topics/opcodes-and-status-codes#gateway
-  private object GatewayOpCode {
-    val Dispatch = 0
-    val Heartbeat = 1
-    val Identify = 2
-    val PresenceUpdate = 3
-    val VoiceStateUpdate = 4
-    val Resume = 6
-    val Reconnect = 7
-    val RequestGuildMembers = 8
-    val InvalidSession = 9
-    val Hello = 10
-    val HeartbeatAck = 11
   }
 }
