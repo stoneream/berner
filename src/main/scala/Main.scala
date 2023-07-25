@@ -41,8 +41,21 @@ object Main extends IOApp {
         for {
           queue <- Queue.unbounded[IO, WSDataFrame]
           _ <- connection.send(payload)
-          // todo heatbeatのintervalを取る, 取れなかったら殺す
-          interval: Int <- IO.fromEither { ??? }
+          interval <-
+            connection.receiveStream
+              .collectFirst({ case WSFrame.Text(text, _) => text })
+              .evalMap { text =>
+                // opのチェックくらいはしたほうが丁寧だけど面倒なので後回し
+                IO.fromEither {
+                  parse(text).map { json => json.hcursor.downField("d").downField("heartbeat_interval").as[Int] }
+                }.flatMap {
+                  case Right(heartbeatInterval) => IO.pure(heartbeatInterval)
+                  case _ => IO.raiseError(Exception("failed to get heartbeat interval"))
+                }
+              }
+              .timeout(30.seconds)
+              .compile
+              .lastOrError
           _ <- (
             connection.receiveStream
               .through(_.evalMap {
