@@ -9,9 +9,6 @@ inThisBuild(
       "-unchecked",
       "-language:postfixOps"
     ),
-    semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision,
-    scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
     scalafmtOnCompile := true
   )
 )
