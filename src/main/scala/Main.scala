@@ -4,7 +4,7 @@ import cats.implicits.*
 import cats.syntax.all.*
 import discord.GatewayOpCode
 import discord.payload.{Identity, Payload}
-import fs2.{Pipe, Stream}
+import fs2.Stream
 import io.circe.*
 import io.circe.generic.auto.*
 import io.circe.parser.*
