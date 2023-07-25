@@ -27,6 +27,9 @@ object Main extends IOApp {
     }
   }
 
+  // todo 雑に標準出力してるのでLoggerを使う
+  // todo Bot起動前にデータベースを初期化する
+  // todo 処理を関数に切り出す
   private def discordBot(config: Config): IO[Unit] = {
     JdkWSClient.simple[IO].flatMap { client =>
       client.connectHighLevel(WSRequest(gatewayUri)).use { connection =>
