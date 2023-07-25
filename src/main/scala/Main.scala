@@ -27,20 +27,15 @@ object Main extends IOApp {
     }
   }
 
-  private def handleHeartbeat(connection: WSConnectionHighLevel[IO], interval: FiniteDuration): IO[Unit] = {
-    val heartbeat = WSFrame.Text("""{"op": 1, "d": null}""")
-    Stream.awakeEvery[IO](interval).evalMap { _ => connection.send(heartbeat) }.compile.drain
-  }
-
-  private def initializeClient(config: Config): IO[Unit] = {
-    val identity = Payload[Identity](GatewayOpCode.Identify, Some(Identity(config.discordToken, 513, Map())), None, None)
-    val payload = WSFrame.Text(identity.asJson.noSpaces)
-
+  private def discordBot(config: Config): IO[Unit] = {
     JdkWSClient.simple[IO].flatMap { client =>
       client.connectHighLevel(WSRequest(gatewayUri)).use { connection =>
         for {
           queue <- Queue.unbounded[IO, WSDataFrame]
-          _ <- connection.send(payload)
+          // Identifyを送信
+          _ <- connection.send(WSFrame.Text(Payload(GatewayOpCode.Identify, Some(Identity(config.discordToken, 513, Map())), None, None).asJson.noSpaces))
+          // `heartbeat_interval`を受け取るまで待つ
+          // ただし、30秒でタイムアウト
           interval <-
             connection.receiveStream
               .collectFirst({ case WSFrame.Text(text, _) => text })
@@ -57,6 +52,7 @@ object Main extends IOApp {
               .compile
               .lastOrError
           _ <- (
+            // イベントが発生するたびにジョブキューに詰める
             connection.receiveStream
               .through(_.evalMap {
                 case text: WSFrame.Text => queue.offer(text).as(None)
@@ -64,8 +60,11 @@ object Main extends IOApp {
               })
               .compile
               .drain,
-            handleHeartbeat(connection, interval.millis),
-            Stream.fromQueueUnterminated(queue).through(_.evalMap(event => IO.println(event))).compile.drain
+            // ジョブキューから取り出して処理
+            // todo コマンド定義と各種処理の実装など
+            Stream.fromQueueUnterminated(queue).through(_.evalMap(event => IO.println(event))).compile.drain,
+            // heartbeatを送信し続ける
+            Stream.awakeEvery[IO](interval.millis).evalMap { _ => connection.send(WSFrame.Text("""{"op": 1, "d": null}""")) }.compile.drain
           ).parTupled
         } yield ()
       }
@@ -76,7 +75,7 @@ object Main extends IOApp {
     if (attempt > 5) {
       IO.raiseError(Exception("failed to connect"))
     } else {
-      initializeClient(config).handleErrorWith { err =>
+      discordBot(config).handleErrorWith { err =>
         for {
           _ <- IO.println(err)
           _ <- IO.println(s"failed to connect (attempt=$attempt)")
