@@ -1,14 +1,18 @@
 import cats.effect.*
+import cats.effect.std.Queue
+import cats.implicits.*
+import cats.syntax.all.*
 import discord.GatewayOpCode
 import discord.payload.{Identity, Payload}
-import fs2.Stream
+import fs2.{Pipe, Stream}
 import io.circe.*
 import io.circe.generic.auto.*
 import io.circe.parser.*
 import io.circe.syntax.*
-import org.http4s.client.websocket.{WSClientHighLevel, WSConnectionHighLevel, WSFrame, WSRequest}
+import org.http4s.client.websocket.{WSClientHighLevel, WSConnectionHighLevel, WSDataFrame, WSFrame, WSRequest}
 import org.http4s.implicits.uri
 import org.http4s.jdkhttpclient.JdkWSClient
+import org.http4s.websocket.WebSocketFrame
 
 import java.net.http.HttpClient
 import scala.concurrent.duration.*
@@ -23,41 +27,34 @@ object Main extends IOApp {
     }
   }
 
-  private def handleHeartbeat(client: WSConnectionHighLevel[IO], interval: FiniteDuration): Stream[IO, Unit] = {
+  private def handleHeartbeat(connection: WSConnectionHighLevel[IO], interval: FiniteDuration): IO[Unit] = {
     val heartbeat = WSFrame.Text("""{"op": 1, "d": null}""")
-    Stream.awakeEvery[IO](interval).evalMap { _ => client.send(heartbeat) }
+    Stream.awakeEvery[IO](interval).evalMap { _ => connection.send(heartbeat) }.compile.drain
   }
 
   private def initializeClient(config: Config): IO[Unit] = {
-    JdkWSClient[IO](HttpClient.newHttpClient).connectHighLevel(WSRequest(gatewayUri)).use { client =>
-      val identity = Payload[Identity](GatewayOpCode.Identify, Some(Identity(config.discordToken, 513, Map())), None, None)
-      val payload = WSFrame.Text(identity.asJson.noSpaces)
+    val identity = Payload[Identity](GatewayOpCode.Identify, Some(Identity(config.discordToken, 513, Map())), None, None)
+    val payload = WSFrame.Text(identity.asJson.noSpaces)
 
-      client.send(payload).flatMap { _ =>
-        client.receiveStream
-          .collectFirst({ case WSFrame.Text(text, _) => text })
-          .flatMap { text =>
-            parse(text) match {
-              case Left(parsingFailure) => Stream.raiseError[IO](throw Exception("failed to parse json", parsingFailure))
-              case Right(json) =>
-                val op = json.hcursor.downField("op").as[Int].getOrElse(-1)
-                Stream.emit(json).covary[IO].evalTap(json => IO(println(json.noSpaces))).flatMap { _ =>
-                  op match {
-                    case GatewayOpCode.Hello =>
-                      val interval =
-                        json.hcursor.downField("d").downField("heartbeat_interval").as[Int].getOrElse(throw Exception("heartbeat_interval is not found"))
-                      handleHeartbeat(client, interval.millis).concurrently(client.receiveStream.evalMap {
-                        case WSFrame.Text(text, _) => IO.println(text)
-                        case _ => IO.unit
-                      })
-                    case op =>
-                      Stream.raiseError[IO](throw Exception(s"unexpected operation code (op=$op)"))
-                  }
-                }
-            }
-          }
-          .compile
-          .drain
+    JdkWSClient.simple[IO].flatMap { client =>
+      client.connectHighLevel(WSRequest(gatewayUri)).use { connection =>
+        for {
+          queue <- Queue.unbounded[IO, WSDataFrame]
+          _ <- connection.send(payload)
+          // todo heatbeatのintervalを取る, 取れなかったら殺す
+          interval: Int <- IO.fromEither { ??? }
+          _ <- (
+            connection.receiveStream
+              .through(_.evalMap {
+                case text: WSFrame.Text => queue.offer(text).as(None)
+                case _: WSFrame.Binary => IO.pure(None) // バイナリは特にハンドリングしない
+              })
+              .compile
+              .drain,
+            handleHeartbeat(connection, interval.millis),
+            Stream.fromQueueUnterminated(queue).through(_.evalMap(event => IO.println(event))).compile.drain
+          ).parTupled
+        } yield ()
       }
     }
   }
