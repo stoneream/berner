@@ -21,6 +21,7 @@ object Dependencies {
     logback,
     typesafeConfig,
     cats,
+    log4cats,
     http4s,
     circe,
     db,

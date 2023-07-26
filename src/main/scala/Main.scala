@@ -13,6 +13,8 @@ import org.http4s.client.websocket.{WSClientHighLevel, WSConnectionHighLevel, WS
 import org.http4s.implicits.uri
 import org.http4s.jdkhttpclient.JdkWSClient
 import org.http4s.websocket.WebSocketFrame
+import org.typelevel.log4cats.*
+import org.typelevel.log4cats.slf4j.Slf4jFactory
 
 import java.net.http.HttpClient
 import scala.concurrent.duration.*
@@ -21,16 +23,19 @@ object Main extends IOApp {
   // todo gateway api 叩いて url を取得する
   private val gatewayUri = uri"wss://gateway.discord.gg/?v=10&encoding=json"
 
+  private implicit val logging: LoggerFactory[IO] = Slf4jFactory.create[IO]
+
   override def run(args: List[String]): IO[ExitCode] = {
     Config.apply.use { config =>
       reconnect(0, config).as(ExitCode.Success)
     }
   }
 
-  // todo 雑に標準出力してるのでLoggerを使う
   // todo Bot起動前にデータベースを初期化する
   // todo 処理を関数に切り出す
   private def discordBot(config: Config): IO[Unit] = {
+    val logger = LoggerFactory.getLogger
+
     JdkWSClient.simple[IO].flatMap { client =>
       client.connectHighLevel(WSRequest(gatewayUri)).use { connection =>
         for {
@@ -65,7 +70,7 @@ object Main extends IOApp {
               .drain,
             // ジョブキューから取り出して処理
             // todo コマンド定義と各種処理の実装など
-            Stream.fromQueueUnterminated(queue).through(_.evalMap(event => IO.println(event))).compile.drain,
+            Stream.fromQueueUnterminated(queue).through(_.evalMap(event => logger.info(event.toString))).compile.drain,
             // heartbeatを送信し続ける
             Stream.awakeEvery[IO](interval.millis).evalMap { _ => connection.send(WSFrame.Text("""{"op": 1, "d": null}""")) }.compile.drain
           ).parTupled
@@ -75,13 +80,14 @@ object Main extends IOApp {
   }
 
   private def reconnect(attempt: Int, config: Config): IO[Unit] = {
+    val logger = LoggerFactory.getLogger
+
     if (attempt > 5) {
       IO.raiseError(Exception("failed to connect"))
     } else {
       discordBot(config).handleErrorWith { err =>
         for {
-          _ <- IO.println(err)
-          _ <- IO.println(s"failed to connect (attempt=$attempt)")
+          _ <- logger.error(err)(s"failed to connect (attempt=$attempt)")
           _ <- IO.sleep(5.seconds)
           _ <- reconnect(attempt + 1, config)
         } yield {}
