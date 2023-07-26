@@ -1,3 +1,5 @@
+package application
+
 import cats.effect.{IO, Resource}
 import com.typesafe.config.ConfigFactory
 
