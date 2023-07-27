@@ -6,6 +6,7 @@ import cats.effect.std.Queue
 import cats.implicits.*
 import cats.syntax.all.*
 import discord.payload.{Identity, Payload}
+import discord.payload.Identity.Intent
 import fs2.{Pipe, Stream}
 import io.circe.Json
 import io.circe.generic.auto.*
@@ -44,7 +45,19 @@ object GatewayClient {
    * `Gateway API`へ接続する
    */
   private def sendIdentity(connection: WSConnectionHighLevel[IO], token: String): IO[Unit] = {
-    val payload = Payload(GatewayOpCode.Identify, Some(Identity(token, 513, Map())), None, None)
+    val payload = Payload(
+      GatewayOpCode.Identify,
+      Some(Identity(token,
+        Seq(
+          Intent.GUILDS,
+          Intent.GUILD_MESSAGES,
+          Intent.MESSAGE_CONTENT
+        )
+      )),
+      None,
+      None
+    )
+
     connection.send(WSFrame.Text(payload.asJson.noSpaces))
   }
 
@@ -72,7 +85,7 @@ object GatewayClient {
   /**
    * `heartbeat`を送信し続ける
    */
-  private def sendHeartbeat[F[_] : Async](connection: WSConnectionHighLevel[F], interval: Int): F[Unit] = {
+  private def sendHeartbeat[F[_]: Async](connection: WSConnectionHighLevel[F], interval: Int): F[Unit] = {
     Stream
       .awakeEvery(interval.millis)
       .evalMap { _ =>
