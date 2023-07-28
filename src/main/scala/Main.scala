@@ -1,15 +1,10 @@
 import application.Config
-import cats.effect.*
-import cats.effect.std.Queue
-import cats.implicits.*
-import cats.syntax.all.*
-import discord.{GatewayClient, GatewayOpCode}
-import fs2.Stream
-import org.typelevel.log4cats.*
+import cats.effect._
+import discord.GatewayClient
+import org.typelevel.log4cats._
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 
-import java.net.http.HttpClient
-import scala.concurrent.duration.*
+import scala.concurrent.duration._
 
 object Main extends IOApp {
 
@@ -27,7 +22,7 @@ object Main extends IOApp {
     val logger = LoggerFactory.getLogger
 
     if (attempt > 5) {
-      IO.raiseError(Exception("failed to connect"))
+      IO.raiseError(new Exception("failed to connect"))
     } else {
       GatewayClient.run(config).handleErrorWith { err =>
         for {

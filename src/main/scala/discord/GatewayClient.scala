@@ -1,25 +1,25 @@
 package discord
 
 import application.Config
-import cats.effect.*
+import cats.effect._
 import cats.effect.std.Queue
-import cats.implicits.*
-import cats.syntax.all.*
-import discord.payload.{Identity, Payload}
+import cats.implicits._
+import discord.handler.{MessageCreateHandler, ReadyHandler}
 import discord.payload.Identity.Intent
 import discord.payload.Payload.DiscordEvent
-import fs2.{Pipe, Stream}
+import discord.payload.{Identity, Payload}
+import fs2.Stream
 import io.circe.Json
-import io.circe.generic.auto.*
-import io.circe.parser.*
-import io.circe.syntax.*
-import org.http4s.client.websocket.{WSConnectionHighLevel, WSDataFrame, WSFrame, WSRequest}
-import org.http4s.implicits.uri
+import io.circe.generic.auto._
+import io.circe.optics.JsonPath._
+import io.circe.parser._
+import io.circe.syntax._
+import org.http4s.client.websocket.{WSConnectionHighLevel, WSFrame, WSRequest}
+import org.http4s.implicits.http4sLiteralsSyntax
 import org.http4s.jdkhttpclient.JdkWSClient
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import org.typelevel.log4cats.{Logger, LoggerFactory}
 
-import scala.concurrent.duration.*
+import scala.concurrent.duration._
 
 object GatewayClient {
   private val logger = Slf4jLogger.getLogger[IO]
@@ -37,7 +37,7 @@ object GatewayClient {
           _ <- (
             sendHeartbeat(connection, interval),
             offerReceiveEvent(connection, jobQueue),
-            Stream.fromQueueUnterminated(jobQueue).through(handleReceiveEvent).compile.drain
+            handleReceiveEvent(jobQueue)
           ).parTupled
         } yield ()
       }
@@ -68,9 +68,11 @@ object GatewayClient {
   private def receiveHeartbeatInterval(connection: WSConnectionHighLevel[IO]): IO[Int] = {
     connection.receiveStream
       .collectFirst({ case WSFrame.Text(text, _) => parse(text) })
-      .collectFirst({ case Right(json) => json.hcursor.downField("d").downField("heartbeat_interval").as[Int] })
+      .collectFirst({ case Right(json) =>
+        root.d.heartbeat_interval.int.getOption(json)
+      })
       // opcodeのチェックをしたほうが丁寧だけどやってない
-      .collectFirst({ case Right(interval) => interval })
+      .collectFirst({ case Some(interval) => interval })
       .timeout(30.seconds)
       .compile
       .lastOrError
@@ -83,7 +85,8 @@ object GatewayClient {
     Stream
       .awakeEvery(interval.millis)
       .evalMap { _ =>
-        connection.send(WSFrame.Text("""{"op": 1, "d": null}"""))
+        val payload = WSFrame.Text("""{"op": 1, "d": null}""")
+        connection.send(payload)
       }
       .compile
       .drain
@@ -94,7 +97,7 @@ object GatewayClient {
    */
   private def offerReceiveEvent(connection: WSConnectionHighLevel[IO], jobQueue: Queue[IO, Json]): IO[Unit] = {
     connection.receiveStream
-      .collect({ case WSFrame.Text(text, _) => parse(text) })
+      .collect({ case WSFrame.Text(text, _) => decode[Json](text) })
       .collect({ case Right(json) => json })
       .evalMap({ json => logger.info(json.noSpaces) *> jobQueue.offer(json) })
       .compile
@@ -102,20 +105,27 @@ object GatewayClient {
   }
 
   /**
-   * ジョブキューを処理する
+   * ジョブキューからイベントを受け取り、ハンドラに処理を委譲する
    */
-  private def handleReceiveEvent: Pipe[IO, Json, Unit] = _.evalMap { json =>
-    val t = json.hcursor.downField("t").as[String]
-    t match {
-      case Left(value) => logger.warn(value.message)
-      case Right(value) =>
-        DiscordEvent.fromString(value) match {
-          // todo イベント分岐
-          case Some(DiscordEvent.MessageCreate) => logger.info("message create")
-          case Some(_) => logger.info("other event")
-          case None => logger.warn("unknown event")
+  private def handleReceiveEvent(jobQueue: Queue[IO, Json]): IO[Unit] = {
+    Stream
+      .fromQueueUnterminated(jobQueue)
+      .through(_.evalMapAccumulate(BotContext.Uninitialized(): BotContext) { (ctx, json) =>
+        (root.t.string.getOption(json) match {
+          case Some(value) =>
+            DiscordEvent.fromString(value) match {
+              case Some(DiscordEvent.Ready) => ReadyHandler.handle(json)(ctx).map((_, ()))
+              case Some(DiscordEvent.MessageCreate) => MessageCreateHandler.handle(json)(ctx).map((_, ()))
+              case Some(_) => IO.pure((ctx, ()))
+              case None => logger.warn("unknown event").as((ctx, ()))
+            }
+          case None => logger.warn(json.noSpaces).as((ctx, ()))
+        }).handleErrorWith { e =>
+          // ジョブキュー内で何らかのエラーが発生してもアプリケーション全体は落ちないようにする
+          logger.error(e)("failed handle event") *> IO.pure((ctx, ()))
         }
-    }
+      })
+      .compile
+      .drain
   }
-
 }

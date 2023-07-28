@@ -9,7 +9,7 @@ object Dependencies {
     val log4cats = "2.6.0"
     val catsEffect = "3.5.0"
     val catsMTL = "1.3.1"
-    val circe = "0.14.5"
+    val circe = "0.14.1"
     val http4s = "0.23.21"
     val http4sJDKHttpClient = "0.9.1"
     val mariadbJavaClient = "3.1.4"
@@ -68,7 +68,8 @@ object Dependencies {
   lazy val circe: Seq[ModuleID] = Seq(
     "io.circe" %% "circe-generic" % Versions.circe,
     "io.circe" %% "circe-literal" % Versions.circe,
-    "io.circe" %% "circe-parser" % Versions.circe
+    "io.circe" %% "circe-parser" % Versions.circe,
+    "io.circe" %% "circe-optics" % Versions.circe
   )
 
   // database

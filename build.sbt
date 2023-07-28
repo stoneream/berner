@@ -2,13 +2,14 @@
 
 inThisBuild(
   List(
-    scalaVersion := "3.3.0",
+    scalaVersion := "2.13.11",
     scalacOptions ++= List(
-      "-feature",
-      "-deprecation",
-      "-unchecked",
-      "-language:postfixOps"
+      "-Ywarn-unused",
+      "-Yrangepos"
     ),
+    semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision,
+    scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
     scalafmtOnCompile := true
   )
 )
