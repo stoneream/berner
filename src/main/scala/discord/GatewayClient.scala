@@ -7,6 +7,7 @@ import cats.implicits.*
 import cats.syntax.all.*
 import discord.payload.{Identity, Payload}
 import discord.payload.Identity.Intent
+import discord.payload.Payload.DiscordEvent
 import fs2.{Pipe, Stream}
 import io.circe.Json
 import io.circe.generic.auto.*
@@ -104,7 +105,17 @@ object GatewayClient {
    * ジョブキューを処理する
    */
   private def handleReceiveEvent: Pipe[IO, Json, Unit] = _.evalMap { json =>
-    IO.unit
+    val t = json.hcursor.downField("t").as[String]
+    t match {
+      case Left(value) => logger.warn(value.message)
+      case Right(value) =>
+        DiscordEvent.fromString(value) match {
+          // todo イベント分岐
+          case Some(DiscordEvent.MessageCreate) => logger.info("message create")
+          case Some(_) => logger.info("other event")
+          case None => logger.warn("unknown event")
+        }
+    }
   }
 
 }
