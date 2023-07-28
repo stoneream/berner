@@ -15,11 +15,13 @@ import io.circe.syntax.*
 import org.http4s.client.websocket.{WSConnectionHighLevel, WSDataFrame, WSFrame, WSRequest}
 import org.http4s.implicits.uri
 import org.http4s.jdkhttpclient.JdkWSClient
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.{Logger, LoggerFactory}
 
 import scala.concurrent.duration.*
 
-// todo logging
 object GatewayClient {
+  private val logger = Slf4jLogger.getLogger[IO]
 
   // todo gateway api 叩いて url を取得する
   private val gatewayUri = uri"wss://gateway.discord.gg/?v=10&encoding=json"
@@ -47,13 +49,16 @@ object GatewayClient {
   private def sendIdentity(connection: WSConnectionHighLevel[IO], token: String): IO[Unit] = {
     val payload = Payload(
       GatewayOpCode.Identify,
-      Some(Identity(token,
-        Seq(
-          Intent.GUILDS,
-          Intent.GUILD_MESSAGES,
-          Intent.MESSAGE_CONTENT
+      Some(
+        Identity(
+          token,
+          Seq(
+            Intent.GUILDS,
+            Intent.GUILD_MESSAGES,
+            Intent.MESSAGE_CONTENT
+          )
         )
-      )),
+      ),
       None,
       None
     )
@@ -67,16 +72,10 @@ object GatewayClient {
    */
   private def receiveHeartbeatInterval(connection: WSConnectionHighLevel[IO]): IO[Int] = {
     connection.receiveStream
-      .collectFirst({ case WSFrame.Text(text, _) =>
-        parse(text)
-      })
-      .collectFirst({ case Right(json) =>
-        json.hcursor.downField("d").downField("heartbeat_interval").as[Int]
-      })
+      .collectFirst({ case WSFrame.Text(text, _) => parse(text) })
+      .collectFirst({ case Right(json) => json.hcursor.downField("d").downField("heartbeat_interval").as[Int] })
       // opcodeのチェックをしたほうが丁寧だけどやってない
-      .collectFirst({ case Right(interval) =>
-        interval
-      })
+      .collectFirst({ case Right(interval) => interval })
       .timeout(30.seconds)
       .compile
       .lastOrError
@@ -86,27 +85,26 @@ object GatewayClient {
    * `heartbeat`を送信し続ける
    */
   private def sendHeartbeat[F[_]: Async](connection: WSConnectionHighLevel[F], interval: Int): F[Unit] = {
-    Stream
-      .awakeEvery(interval.millis)
-      .evalMap { _ =>
-        connection.send(WSFrame.Text("""{"op": 1, "d": null}"""))
-      }
-      .compile
-      .drain
+    Stream.awakeEvery(interval.millis).evalMap { _ => connection.send(WSFrame.Text("""{"op": 1, "d": null}""")) }.compile.drain
   }
 
   /**
    * `Gateway API`から受信したイベントをジョブキューに詰める
    */
   private def offerReceiveEvent(connection: WSConnectionHighLevel[IO], jobQueue: Queue[IO, Json]): IO[Unit] = {
-    connection.receiveStream.collect({ case WSFrame.Text(text, _) => parse(text) }).collect({ case Right(json) => json }).evalMap(jobQueue.offer).compile.drain
+    connection.receiveStream
+      .collect({ case WSFrame.Text(text, _) => parse(text) })
+      .collect({ case Right(json) => json })
+      .evalMap({ json => logger.info(json.noSpaces) *> jobQueue.offer(json) })
+      .compile
+      .drain
   }
 
   /**
    * ジョブキューを処理する
    */
   private def handleReceiveEvent: Pipe[IO, Json, Unit] = _.evalMap { json =>
-    IO.println(json.noSpaces)
+    IO.unit
   }
 
 }
