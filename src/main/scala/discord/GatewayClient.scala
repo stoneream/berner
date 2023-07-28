@@ -48,21 +48,15 @@ object GatewayClient {
    * `Gateway API`へ接続する
    */
   private def sendIdentity(connection: WSConnectionHighLevel[IO], token: String): IO[Unit] = {
-    val payload = Payload(
-      GatewayOpCode.Identify,
-      Some(
-        Identity(
-          token,
-          Seq(
-            Intent.GUILDS,
-            Intent.GUILD_MESSAGES,
-            Intent.MESSAGE_CONTENT
-          )
-        )
-      ),
-      None,
-      None
+    val intents = Seq(
+      Intent.GUILDS,
+      Intent.GUILD_MEMBERS,
+      Intent.GUILD_MESSAGES,
+      Intent.GUILD_MESSAGE_REACTIONS,
+      Intent.MESSAGE_CONTENT
     )
+    val identity = Identity(token, intents)
+    val payload = Payload(GatewayOpCode.Identify, Some(identity), None, None)
 
     connection.send(WSFrame.Text(payload.asJson.noSpaces))
   }
@@ -86,7 +80,13 @@ object GatewayClient {
    * `heartbeat`を送信し続ける
    */
   private def sendHeartbeat[F[_]: Async](connection: WSConnectionHighLevel[F], interval: Int): F[Unit] = {
-    Stream.awakeEvery(interval.millis).evalMap { _ => connection.send(WSFrame.Text("""{"op": 1, "d": null}""")) }.compile.drain
+    Stream
+      .awakeEvery(interval.millis)
+      .evalMap { _ =>
+        connection.send(WSFrame.Text("""{"op": 1, "d": null}"""))
+      }
+      .compile
+      .drain
   }
 
   /**
