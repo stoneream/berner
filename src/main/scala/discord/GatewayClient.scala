@@ -4,6 +4,7 @@ import application.Config
 import cats.effect._
 import cats.effect.std.Queue
 import cats.implicits._
+import discord.BotContext.{InitializedBotContext, ReadyBotContext}
 import discord.handler.{MessageCreateHandler, ReadyHandler}
 import discord.payload.Identity.Intent
 import discord.payload.Payload.DiscordEvent
@@ -32,12 +33,12 @@ object GatewayClient {
       client.connectHighLevel(WSRequest(gatewayUri)).use { connection =>
         for {
           jobQueue <- Queue.unbounded[IO, Json]
-          _ <- sendIdentity(connection, config.discordToken)
+          initializedContext <- sendIdentity(connection, config.discordToken)
           interval <- receiveHeartbeatInterval(connection)
           _ <- (
             sendHeartbeat(connection, interval),
             offerReceiveEvent(connection, jobQueue),
-            handleReceiveEvent(jobQueue)
+            handleReceiveEvent(jobQueue)(initializedContext)
           ).parTupled
         } yield ()
       }
@@ -47,7 +48,7 @@ object GatewayClient {
   /**
    * `Gateway API`へ接続する
    */
-  private def sendIdentity(connection: WSConnectionHighLevel[IO], token: String): IO[Unit] = {
+  private def sendIdentity(connection: WSConnectionHighLevel[IO], token: String): IO[BotContext] = {
     val intents = Seq(
       Intent.GUILDS,
       Intent.GUILD_MEMBERS,
@@ -58,7 +59,11 @@ object GatewayClient {
     val identity = Identity(token, intents)
     val payload = Payload(GatewayOpCode.Identify, Some(identity), None, None)
 
-    connection.send(WSFrame.Text(payload.asJson.noSpaces))
+    for {
+      _ <- connection.send(WSFrame.Text(payload.asJson.noSpaces))
+    } yield {
+      InitializedBotContext(token)
+    }
   }
 
   /**
@@ -107,10 +112,10 @@ object GatewayClient {
   /**
    * ジョブキューからイベントを受け取り、ハンドラに処理を委譲する
    */
-  private def handleReceiveEvent(jobQueue: Queue[IO, Json]): IO[Unit] = {
+  private def handleReceiveEvent(jobQueue: Queue[IO, Json])(context: BotContext): IO[Unit] = {
     Stream
       .fromQueueUnterminated(jobQueue)
-      .through(_.evalMapAccumulate(BotContext.Uninitialized(): BotContext) { (ctx, json) =>
+      .through(_.evalMapAccumulate(context) { (ctx, json) =>
         (root.t.string.getOption(json) match {
           case Some(value) =>
             DiscordEvent.fromString(value) match {
