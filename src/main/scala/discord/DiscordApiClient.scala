@@ -5,7 +5,7 @@ import cats.syntax.all._
 import io.circe.Json
 import org.http4s.circe.CirceEntityCodec.circeEntityDecoder
 import org.http4s.client.Client
-import org.http4s.client.middleware.RequestLogger
+import org.http4s.client.middleware.{RequestLogger, ResponseLogger}
 import org.http4s.{Headers, Method, Request, Uri, UrlForm}
 import org.http4s.jdkhttpclient.JdkHttpClient
 
@@ -15,7 +15,7 @@ object DiscordApiClient {
   private def makeHttpClient[F[_]: Async](): F[Client[F]] = {
     for {
       httpClient <- JdkHttpClient.simple[F]
-      httpClientWithLogger = RequestLogger(logHeaders = true, logBody = true)(httpClient)
+      httpClientWithLogger = RequestLogger(logHeaders = true, logBody = true)(ResponseLogger(logHeaders = true, logBody = true)(httpClient))
     } yield httpClientWithLogger
   }
 
