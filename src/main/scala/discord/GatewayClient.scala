@@ -4,7 +4,7 @@ import application.Config
 import cats.effect._
 import cats.effect.std.Queue
 import cats.implicits._
-import discord.BotContext.{InitializedBotContext, ReadyBotContext}
+import discord.BotContext.InitializedBotContext
 import discord.handler.{MessageCreateHandler, ReadyHandler}
 import discord.payload.Identity.Intent
 import discord.payload.Payload.DiscordEvent
