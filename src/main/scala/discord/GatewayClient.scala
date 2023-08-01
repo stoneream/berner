@@ -1,13 +1,10 @@
 package discord
 
-import application.Config
 import cats.effect._
 import cats.effect.std.Queue
 import cats.implicits._
 import discord.BotContext.InitializedBotContext
-import discord.handler.{MessageCreateHandler, ReadyHandler}
 import discord.payload.Identity.Intent
-import discord.payload.Payload.DiscordEvent
 import discord.payload.{Identity, Payload}
 import fs2.Stream
 import io.circe.Json
@@ -28,17 +25,22 @@ object GatewayClient {
   // todo gateway api 叩いて url を取得する
   private val gatewayUri = uri"wss://gateway.discord.gg/?v=10&encoding=json"
 
-  def run(config: Config): IO[Unit] = {
+
+  // 面倒だったのですべてのイベントを垂れ流すハンドラを引数に取るのみとしている
+  def run(
+      config: DiscordConfig,
+      jobHandler: (BotContext, Json) => IO[BotContext]
+  ): IO[Unit] = {
     JdkWSClient.simple[IO].flatMap { client =>
       client.connectHighLevel(WSRequest(gatewayUri)).use { connection =>
         for {
           jobQueue <- Queue.unbounded[IO, Json]
-          initializedContext <- sendIdentity(connection, config.discordToken)
+          initializedContext <- sendIdentity(connection, config.token)
           interval <- receiveHeartbeatInterval(connection)
           _ <- (
             sendHeartbeat(connection, interval),
             offerReceiveEvent(connection, jobQueue),
-            handleReceiveEvent(jobQueue)(initializedContext)
+            handleReceiveEvent(jobQueue, jobHandler)(initializedContext)
           ).parTupled
         } yield ()
       }
@@ -112,23 +114,21 @@ object GatewayClient {
   /**
    * ジョブキューからイベントを受け取り、ハンドラに処理を委譲する
    */
-  private def handleReceiveEvent(jobQueue: Queue[IO, Json])(context: BotContext): IO[Unit] = {
+  private def handleReceiveEvent(
+      jobQueue: Queue[IO, Json],
+      jobHandler: (BotContext, Json) => IO[BotContext]
+  )(context: BotContext): IO[Unit] = {
     Stream
       .fromQueueUnterminated(jobQueue)
-      .through(_.evalMapAccumulate(context) { (ctx, json) =>
-        (root.t.string.getOption(json) match {
-          case Some(value) =>
-            DiscordEvent.fromString(value) match {
-              case Some(DiscordEvent.Ready) => ReadyHandler.handle(json)(ctx).map((_, ()))
-              case Some(DiscordEvent.MessageCreate) => MessageCreateHandler.handle(json)(ctx).map((_, ()))
-              case Some(_) => IO.pure((ctx, ()))
-              case None => logger.warn("unknown event").as((ctx, ()))
-            }
-          case None => logger.warn(json.noSpaces).as((ctx, ()))
-        }).handleErrorWith { e =>
-          // ジョブキュー内で何らかのエラーが発生してもアプリケーション全体は落ちないようにする
-          logger.error(e)("failed handle event") *> IO.pure((ctx, ()))
-        }
+      .through(_.evalMapAccumulate(context) { case (context1, json) =>
+        jobHandler(context1, json)
+          .map { context2 =>
+            (context2, ())
+          }
+          .handleErrorWith { e =>
+            // ジョブキュー内で何らかのエラーが発生してもアプリケーション全体は落ちないようにする
+            logger.error(e)("failed handle event") *> IO.pure((context1, ()))
+          }
       })
       .compile
       .drain
