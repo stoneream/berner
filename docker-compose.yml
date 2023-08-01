@@ -1,0 +1,10 @@
+services:
+  mariadb:
+    image: mariadb:11.0.2
+    env_file: ./docker/dev.env
+    volumes:
+      - berner-data:/var/lib/mysql
+    ports:
+      - 127.0.0.1:23306:3306
+volumes:
+  berner-data:

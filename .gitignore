@@ -5,3 +5,5 @@ target/
 .vscode
 application.conf
 .run
+db/report.html
+db/report.json
