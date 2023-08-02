@@ -34,7 +34,7 @@ object GatewayClient {
       client.connectHighLevel(WSRequest(gatewayUri)).use { connection =>
         for {
           jobQueue <- Queue.unbounded[IO, Json]
-          initializedContext <- sendIdentity(connection, config.token)
+          initializedContext <- sendIdentity(connection, config)
           interval <- receiveHeartbeatInterval(connection)
           _ <- (
             sendHeartbeat(connection, interval),
@@ -49,7 +49,7 @@ object GatewayClient {
   /**
    * `Gateway API`へ接続する
    */
-  private def sendIdentity(connection: WSConnectionHighLevel[IO], token: String): IO[BotContext] = {
+  private def sendIdentity(connection: WSConnectionHighLevel[IO], config: DiscordConfig): IO[BotContext] = {
     val intents = Seq(
       Intent.GUILDS,
       Intent.GUILD_MEMBERS,
@@ -57,13 +57,13 @@ object GatewayClient {
       Intent.GUILD_MESSAGE_REACTIONS,
       Intent.MESSAGE_CONTENT
     )
-    val identity = Identity(token, intents)
+    val identity = Identity(config.token, intents)
     val payload = Payload(GatewayOpCode.Identify, Some(identity), None, None)
 
     for {
       _ <- connection.send(WSFrame.Text(payload.asJson.noSpaces))
     } yield {
-      InitializedBotContext(token)
+      InitializedBotContext(config)
     }
   }
 

@@ -10,7 +10,7 @@ object GuildCreateHandler {
   def handle(json: Json)(context: BotContext): IO[BotContext] = {
     context match {
       case BotContext.InitializedBotContext(_) => IO.raiseError(new Exception("unexpected bot context"))
-      case BotContext.ReadyBotContext(token, _, hubTimesOpt, meUserId) =>
+      case BotContext.ReadyBotContext(config, _, meUserId) =>
         // ウォッチ対象のサーバーとして登録
         val channelsPath = root.d.channels.each.json
         val channelNamePath = root.name.string
@@ -26,12 +26,10 @@ object GuildCreateHandler {
         }
 
         val times = channels.filter(_.name.startsWith("times-"))
-        val hubTimes = channels.find(_.name == "hub-times")
 
         val nextContext = BotContext.ReadyBotContext(
-          token = token,
+          config = config,
           times = times,
-          hubTimes = hubTimes,
           meUserId = meUserId
         )
 

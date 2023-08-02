@@ -32,3 +32,11 @@ $ flyway -configFiles="flyway.sample.conf" migrate
 # Successfully applied 1 migration to schema `database_name`, now at version v1 (execution time 00:00.039s)
 # A Flyway report has been generated here: E:\ghq\github.com\stoneream\cats-playground\db\report.html
 ```
+
+## Discord関連のメモ
+
+- `hub-times`には`times-`で始まるチャンネルのメッセージが転送される
+  - 前提条件は以下
+  - `hub-times`チャンネルの作成
+  - `hub-times`チャンネルにwebhookを設定
+  - アプリケーションにwebhookのidとtokenを設定

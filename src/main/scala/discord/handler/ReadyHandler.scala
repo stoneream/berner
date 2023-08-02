@@ -8,14 +8,13 @@ import io.circe.optics.JsonPath.root
 object ReadyHandler {
   def handle(json: Json)(context: BotContext): IO[BotContext] = {
     context match {
-      case BotContext.InitializedBotContext(token) =>
+      case BotContext.InitializedBotContext(config) =>
         val meUserIdPath = root.d.user.id.string
         meUserIdPath.getOption(json) match {
           case Some(meUserId) =>
             val nextContext = BotContext.ReadyBotContext(
-              token = token,
+              config = config,
               times = List.empty,
-              hubTimes = None,
               meUserId = meUserId
             )
             IO.pure(nextContext)
