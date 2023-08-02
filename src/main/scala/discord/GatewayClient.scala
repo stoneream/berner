@@ -25,7 +25,6 @@ object GatewayClient {
   // todo gateway api 叩いて url を取得する
   private val gatewayUri = uri"wss://gateway.discord.gg/?v=10&encoding=json"
 
-
   // 面倒だったのですべてのイベントを垂れ流すハンドラを引数に取るのみとしている
   def run(
       config: DiscordConfig,
