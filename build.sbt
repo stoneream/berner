@@ -7,6 +7,9 @@ inThisBuild(
       "-Ywarn-unused",
       "-Yrangepos"
     ),
+//    javaOptions ++= List(
+//      "-Dpidfile.path=/dev/null"
+//    ),
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
@@ -34,22 +37,22 @@ inThisBuild(
 
 // === publish settings ===
 
-sonatypeCredentialHost := "s01.oss.sonatype.org"
-sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
-
-lazy val publishSettings = Seq(
-  publish / skip := false,
-  Test / publishArtifact := false,
-  versionScheme := Some("early-semver")
-)
+// todo
 
 // === project setting ===
 
-lazy val root = (project in file(".")).settings(
-  name := "berner",
-  libraryDependencies ++= Dependencies.deps,
-  publish / skip := true
-)
+lazy val root = (project in file("."))
+  .settings(
+    name := "berner",
+    libraryDependencies ++= Dependencies.deps,
+    publish / skip := true,
+    dockerBaseImage := "azul/zulu-openjdk:11-latest"
+  )
+  .enablePlugins(
+    DockerPlugin,
+    JavaAgent, // todo https://github.com/prometheus/jmx_exporter
+    JavaAppPackaging
+  )
 //  .aggregate(subProject)
 
 //lazy val subProject = (project in file("subProject")).settings(
