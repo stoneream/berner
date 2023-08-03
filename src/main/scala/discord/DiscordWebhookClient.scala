@@ -20,17 +20,39 @@ object DiscordWebhookClient {
   /**
    * https://discord.com/developers/docs/resources/webhook#execute-webhook
    */
-  def execute(content: String, username: String, avatarUrl: String)(webhookId: String, webhookToken: String): IO[Json] = {
+  def execute(content: String, username: String, avatarUrl: Option[String])(webhookId: String, webhookToken: String): IO[Json] = {
     for {
       httpClient <- makeHttpClient[IO]()
       request = Request[IO](
         method = Method.POST,
         uri = Uri.unsafeFromString(s"https://discord.com/api/webhooks/$webhookId/$webhookToken").withQueryParam("wait", "true")
       ).withEntity {
+        avatarUrl.fold {
+          UrlForm(
+            ("content", content),
+            ("username", username)
+          )
+        } { avatarUrl =>
+          UrlForm(
+            ("content", content),
+            ("username", username),
+            ("avatar_url", avatarUrl)
+          )
+        }
+      }
+      response <- httpClient.expect[Json](request)
+    } yield response
+  }
+
+  def editMessage(messageId: String, content: String)(webhookId: String, webhookToken: String): IO[Json] = {
+    for {
+      httpClient <- makeHttpClient[IO]()
+      request = Request[IO](
+        method = Method.PATCH,
+        uri = Uri.unsafeFromString(s"https://discord.com/api/webhooks/${webhookId}/${webhookToken}/messages/${messageId}")
+      ).withEntity {
         UrlForm(
-          ("content", content),
-          ("username", username),
-          ("avatar_url", avatarUrl)
+          ("content", content)
         )
       }
       response <- httpClient.expect[Json](request)

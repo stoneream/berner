@@ -15,11 +15,11 @@ object DatabaseConfig {
   def default: Resource[IO, DatabaseConfig] = {
     Resource.eval(IO(ConfigFactory.load())).map { config =>
       DatabaseConfig(
-        driver = config.getString("database.default.driver"),
-        url = config.getString("database.default.url"),
-        user = config.getString("database.default.user"),
-        password = config.getString("database.default.password"),
-        poolMaxSize = config.getInt("database.default.poolMaxSize")
+        driver = config.getString("database.primary.driver"),
+        url = config.getString("database.primary.url"),
+        user = config.getString("database.primary.user"),
+        password = config.getString("database.primary.password"),
+        poolMaxSize = config.getInt("database.primary.poolMaxSize")
       )
     }
   }

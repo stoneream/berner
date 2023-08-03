@@ -1,15 +1,19 @@
 package discord.handler
 
+import application.model.HubMessage
 import cats.effect.IO
+import database.service.HubMessageService
 import discord.{BotContext, DiscordApiClient, DiscordWebhookClient}
 import io.circe._
 import io.circe.optics.JsonPath._
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
+import java.time.LocalDateTime
+
 object MessageCreateHandler {
   private val logger = Slf4jLogger.getLogger[IO]
 
-  def handle(json: Json)(context: BotContext): IO[BotContext] = {
+  def handle(json: Json)(context: BotContext, hubMessageService: HubMessageService[IO]): IO[BotContext] = {
 
     val guildIdPath = root.d.guild_id.string
     val messageIdPath = root.d.id.string
@@ -24,17 +28,17 @@ object MessageCreateHandler {
       case context: BotContext.ReadyBotContext =>
         (for {
           guildId <- guildIdPath.getOption(json)
-          messageId <- messageIdPath.getOption(json)
+          sourceMessageId <- messageIdPath.getOption(json)
           authorUsername <- authorUsernamePath.getOption(json)
           authorUserId <- authorUserIdPath.getOption(json)
-          authorAvatar <- authorAvatarPath.getOption(json)
+          authorAvatarOpt = authorAvatarPath.getOption(json)
           content <- contentPath.getOption(json)
-          channelId <- channelIdPath.getOption(json)
+          sourceChannelId <- channelIdPath.getOption(json)
           mentionsJson <- mentionsPath.getOption(json)
         } yield {
           // ping-pong
           val pingPong = if (content == "ping") {
-            DiscordApiClient.createMessage("pong", channelId)(context.config.token) *> IO.unit
+            DiscordApiClient.createMessage("pong", sourceChannelId)(context.config.token) *> IO.unit
           } else {
             IO.unit
           }
@@ -42,7 +46,7 @@ object MessageCreateHandler {
           // バカハブ
           val hub = {
             val authorIsNotMe = authorUserId != context.meUserId
-            val monitorTarget = context.times.exists(_.id == channelId)
+            val monitorTarget = context.times.exists(_.id == sourceChannelId)
 
             val mentions = mentionsJson.flatMap { mentionJson =>
               for {
@@ -54,18 +58,21 @@ object MessageCreateHandler {
             }.toMap
 
             if (authorIsNotMe && monitorTarget) {
-              // メンションが二重に飛ぶので対策
               val sanitizedContent = {
-                "<@(\\d+)>".r.replaceAllIn(
-                  content,
-                  { m =>
-                    val userId = m.group(1)
-                    mentions.get(userId).map { globalName => s"@.$globalName" }.getOrElse(s"@.$userId")
-                  }
-                )
+                // メンションが二重に飛ぶので対策
+                "<@(\\d+)>".r
+                  .replaceAllIn(
+                    content,
+                    { m =>
+                      val userId = m.group(1)
+                      mentions.get(userId).map { globalName => s"@.$globalName" }.getOrElse(s"@.$userId")
+                    }
+                  )
+                  .replace("@here", "@.here")
+                  .replace("@everyone", "@.everyone")
               }
 
-              val messageLink = s"https://discord.com/channels/$guildId/$channelId/$messageId"
+              val messageLink = s"https://discord.com/channels/$guildId/$sourceChannelId/$sourceMessageId"
 
               val text =
                 s"""
@@ -73,16 +80,32 @@ object MessageCreateHandler {
                    |""".stripMargin
 
               // https://discord.com/developers/docs/reference#image-formatting
-              val avatarUrl = s"https://cdn.discordapp.com/avatars/$authorUserId/$authorAvatar.png"
-
-              DiscordWebhookClient.execute(
-                text,
-                authorUsername,
-                avatarUrl
-              )(
-                context.config.timesHubWebhookId,
-                context.config.timesHubWebhookToken
-              ) *> IO.pure(context)
+              val avatarUrl = authorAvatarOpt.map { authorAvatar =>  s"https://cdn.discordapp.com/avatars/$authorUserId/$authorAvatar.png" }
+              for {
+                response <- DiscordWebhookClient
+                  .execute(text, authorUsername, avatarUrl)(context.config.timesHubWebhookId, context.config.timesHubWebhookToken)
+                  .map { json =>
+                    (for {
+                      channelId <- root.channel_id.string.getOption(json)
+                      messageId <- root.id.string.getOption(json)
+                    } yield (channelId, messageId)).getOrElse(throw new Exception("unexpected response"))
+                  }
+                (channelId, messageId) = response
+                hubMessage = HubMessage(
+                  id = 0, // write時に自動採番される
+                  sourceMessageId = sourceMessageId,
+                  sourceChannelId = sourceChannelId,
+                  messageId = messageId,
+                  channelId = channelId,
+                  guildId = guildId,
+                  createdAt = LocalDateTime.now(), // todo https://typelevel.org/cats-effect/docs/typeclasses/clock
+                  updatedAt = LocalDateTime.now(),
+                  deletedAt = None
+                )
+                _ <- hubMessageService.write(hubMessage)
+              } yield {
+                context
+              }
             } else {
               IO.pure(context)
             }
