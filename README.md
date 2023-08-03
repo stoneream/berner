@@ -1,5 +1,9 @@
 # berner
 
+![berner](./berner.png)
+
+## About
+
 http4sでdiscordのbotを書いてみるテスト
 
 ## GitHub Actionsの設定
