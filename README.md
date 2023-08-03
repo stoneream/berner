@@ -30,7 +30,6 @@ $ flyway -configFiles="flyway.sample.conf" migrate
 # Current version of schema `database_name`: << Empty Schema >>
 # Migrating schema `database_name` to version "1 - initial version"
 # Successfully applied 1 migration to schema `database_name`, now at version v1 (execution time 00:00.039s)
-# A Flyway report has been generated here: E:\ghq\github.com\stoneream\cats-playground\db\report.html
 ```
 
 ## Discord関連のメモ
@@ -40,3 +39,30 @@ $ flyway -configFiles="flyway.sample.conf" migrate
   - `hub-times`チャンネルの作成
   - `hub-times`チャンネルにwebhookを設定
   - アプリケーションにwebhookのidとtokenを設定
+
+### Botの権限周りの設定
+
+![memo1](./memo1.png)
+
+![memo2](./memo2.png)
+
+## Dockerイメージのビルド
+
+```
+sbt docker:publishLocal
+```
+
+Docker Plugin — sbt-native-packager 1.9.0 documentation : https://www.scala-sbt.org/sbt-native-packager/formats/docker.html
+
+## 環境変数
+
+| 変数名                                    | 説明                             | 補足                                                          |
+|----------------------------------------|--------------------------------|-------------------------------------------------------------|
+| BERNER_DISCORD_TOKEN                   | DiscordのBotのトークン               | Developer Portal から取得                                       |
+| BERNER_DISCORD_TIMES_HUB_WEBHOOK_ID    | `hub-times`チャンネルのwebhookのid    | https://discord.com/api/webhooks/[WEBHOOK_ID]/WEBHOOK_TOKEN |
+| BERNER_DISCORD_TIMES_HUB_WEBHOOK_TOKEN | `hub-times`チャンネルのwebhookのtoken | https://discord.com/api/webhooks/WEBHOOK_ID/[WEBHOOK_TOKEN] |
+| BERNER_DATABASE_PRIMARY_HOST           | データベースのホスト                     |                                                             |
+| BERNER_DATABASE_PRIMARY_PORT           | データベースのポート                     |                                                             |
+| BERNER_DATABASE_PRIMARY_NAME           | データベースの名前                      |                                                             |
+| BERNER_DATABASE_PRIMARY_USER           | データベースのユーザー名                   |                                                             |
+| BERNER_DATABASE_PRIMARY_PASSWORD       | データベースのパスワード                   |                                                             |
