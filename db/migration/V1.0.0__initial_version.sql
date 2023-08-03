@@ -6,6 +6,7 @@ create table hub_messages(
   source_channel_id varchar(255) not null,
   message_id varchar(255) not null,
   channel_id varchar(255) not null,
+  guild_id varchar(255) not null,
   created_at datetime not null,
   updated_at datetime not null,
   deleted_at datetime
