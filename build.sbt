@@ -7,9 +7,6 @@ inThisBuild(
       "-Ywarn-unused",
       "-Yrangepos"
     ),
-//    javaOptions ++= List(
-//      "-Dpidfile.path=/dev/null"
-//    ),
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
@@ -46,12 +43,17 @@ lazy val root = (project in file("."))
     name := "berner",
     libraryDependencies ++= Dependencies.deps,
     publish / skip := true,
-    dockerBaseImage := "azul/zulu-openjdk:11-latest"
+    dockerBaseImage := "azul/zulu-openjdk:11-latest",
+    Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
+    Universal / javaOptions ++= List(
+      "-Dpidfile.path=/dev/null"
+    )
   )
   .enablePlugins(
     DockerPlugin,
     JavaAgent, // todo https://github.com/prometheus/jmx_exporter
-    JavaAppPackaging
+    JavaAppPackaging,
+    UniversalPlugin
   )
 //  .aggregate(subProject)
 

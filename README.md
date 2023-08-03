@@ -54,6 +54,12 @@ sbt docker:publishLocal
 
 Docker Plugin — sbt-native-packager 1.9.0 documentation : https://www.scala-sbt.org/sbt-native-packager/formats/docker.html
 
+## Dockerイメージの実行例
+
+```
+docker run -it --rm --env-file ./.env berner:0.1.0-SNAPSHOT
+```
+
 ## 環境変数
 
 | 変数名                                    | 説明                             | 補足                                                          |

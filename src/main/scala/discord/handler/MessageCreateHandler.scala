@@ -80,7 +80,7 @@ object MessageCreateHandler {
                    |""".stripMargin
 
               // https://discord.com/developers/docs/reference#image-formatting
-              val avatarUrl = authorAvatarOpt.map { authorAvatar =>  s"https://cdn.discordapp.com/avatars/$authorUserId/$authorAvatar.png" }
+              val avatarUrl = authorAvatarOpt.map { authorAvatar => s"https://cdn.discordapp.com/avatars/$authorUserId/$authorAvatar.png" }
               for {
                 response <- DiscordWebhookClient
                   .execute(text, authorUsername, avatarUrl)(context.config.timesHubWebhookId, context.config.timesHubWebhookToken)
