@@ -60,6 +60,8 @@ Docker Plugin — sbt-native-packager 1.9.0 documentation : https://www.scala-sb
 docker run -it --rm --env-file ./.env berner:0.1.0-SNAPSHOT
 ```
 
+必要に応じて`--add-host=host.docker.internal:host-gateway`
+
 ## 環境変数
 
 | 変数名                                    | 説明                             | 補足                                                          |
