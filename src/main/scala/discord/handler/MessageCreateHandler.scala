@@ -76,7 +76,8 @@ object MessageCreateHandler {
 
               val text =
                 s"""
-                   |$sanitizedContent ($messageLink)
+                   |$sanitizedContent
+                   |($messageLink)
                    |""".stripMargin
 
               // https://discord.com/developers/docs/reference#image-formatting
