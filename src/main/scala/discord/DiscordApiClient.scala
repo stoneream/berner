@@ -52,7 +52,7 @@ object DiscordApiClient {
           "Authorization" -> s"Bot ${token}"
         )
       )
-      response <- httpClient.expect[String](request)
-    } yield response
+      _ <- httpClient.expect[String](request)
+    } yield ()
   }
 }

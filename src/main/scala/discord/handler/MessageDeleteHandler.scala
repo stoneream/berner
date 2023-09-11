@@ -2,16 +2,13 @@ package discord.handler
 
 import cats.effect.IO
 import database.service.HubMessageService
-import discord.{BotContext, DiscordApiClient, DiscordWebhookClient}
+import discord.{BotContext, DiscordApiClient}
 import io.circe._
 import io.circe.optics.JsonPath._
-import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.time.LocalDateTime
 
 object MessageDeleteHandler {
-  private val logger = Slf4jLogger.getLogger[IO]
-
   private case class Payload(
       guildId: String,
       messageId: String,
