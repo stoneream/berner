@@ -140,6 +140,14 @@ object Payload {
       override val value = "WEBHOOKS_UPDATE"
     }
 
+    case object ThreadCreate extends DiscordEvent {
+      override val value = "THREAD_CREATE"
+    }
+
+    case object ThreadDelete extends DiscordEvent {
+      override val value = "THREAD_DELETE"
+    }
+
     val values: Seq[DiscordEvent] = Seq(
       Ready,
       Resumed,
@@ -173,7 +181,9 @@ object Payload {
       UserUpdate,
       VoiceStateUpdate,
       VoiceServerUpdate,
-      WebhooksUpdate
+      WebhooksUpdate,
+      ThreadCreate,
+      ThreadDelete
     )
 
     def fromString(str: String): Option[DiscordEvent] = DiscordEvent.values.find(_.value == str)

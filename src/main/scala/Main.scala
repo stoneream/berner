@@ -1,7 +1,7 @@
 import cats.effect._
 import database.Database
 import database.service.HubMessageService
-import discord.handler.{GuildCreateHandler, MessageCreateHandler, MessageDeleteHandler, MessageUpdateHandler, ReadyHandler}
+import discord.handler.{GuildCreateHandler, MessageCreateHandler, MessageDeleteHandler, MessageUpdateHandler, ReadyHandler, ThreadCreateHandler, ThreadDeleteHandler}
 import discord.payload.Payload.DiscordEvent
 import discord.{BotContext, DiscordConfig, GatewayClient}
 import io.circe.Json
@@ -31,6 +31,8 @@ object Main extends IOApp {
                     case Some(DiscordEvent.GuildCreate) => GuildCreateHandler.handle(json)(context)
                     case Some(DiscordEvent.MessageDelete) => MessageDeleteHandler.handle(json)(context, hubMessageService)
                     case Some(DiscordEvent.MessageUpdate) => MessageUpdateHandler.handle(json)(context, hubMessageService)
+                    case Some(DiscordEvent.ThreadCreate) => ThreadCreateHandler.handle(json)(context)
+                    case Some(DiscordEvent.ThreadDelete) => ThreadDeleteHandler.handle(json)(context, hubMessageService)
                     case Some(_) => IO.pure(context)
                     case None => logger.warn("unknown event").as(context)
                   }

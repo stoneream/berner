@@ -6,13 +6,10 @@ import database.service.HubMessageService
 import discord.{BotContext, DiscordApiClient, DiscordWebhookClient}
 import io.circe._
 import io.circe.optics.JsonPath._
-import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.time.LocalDateTime
 
 object MessageCreateHandler {
-  private val logger = Slf4jLogger.getLogger[IO]
-
   def handle(json: Json)(context: BotContext, hubMessageService: HubMessageService[IO]): IO[BotContext] = {
 
     val guildIdPath = root.d.guild_id.string
@@ -46,7 +43,8 @@ object MessageCreateHandler {
           // バカハブ
           val hub = {
             val authorIsNotMe = authorUserId != context.meUserId
-            val monitorTarget = context.times.exists(_.id == sourceChannelId)
+            val hasTimes = context.times.exists(_.id == sourceChannelId)
+            val hasTimesThreads = context.timesThreads.exists(_.id == sourceChannelId)
 
             val mentions = mentionsJson.flatMap { mentionJson =>
               for {
@@ -57,7 +55,7 @@ object MessageCreateHandler {
               }
             }.toMap
 
-            if (authorIsNotMe && monitorTarget) {
+            if (authorIsNotMe && (hasTimes || hasTimesThreads)) {
               val sanitizedContent = {
                 // メンションが二重に飛ぶので対策
                 "<@(\\d+)>".r

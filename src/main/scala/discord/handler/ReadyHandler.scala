@@ -15,6 +15,7 @@ object ReadyHandler {
             val nextContext = BotContext.ReadyBotContext(
               config = config,
               times = List.empty,
+              timesThreads = List.empty,
               meUserId = meUserId
             )
             IO.pure(nextContext)
