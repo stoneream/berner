@@ -5,7 +5,7 @@ import cats.effect.std.Queue
 import cats.implicits._
 import discord.BotContext.InitializedBotContext
 import discord.payload.Identity.Intent
-import discord.payload.{Identity, Payload}
+import discord.payload.{GatewayOpCode, Identity, Payload}
 import fs2.Stream
 import io.circe.Json
 import io.circe.generic.auto._
