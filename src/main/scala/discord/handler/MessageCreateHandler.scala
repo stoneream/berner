@@ -20,6 +20,8 @@ object MessageCreateHandler {
     val contentPath = root.d.content.string
     val channelIdPath = root.d.channel_id.string
     val mentionsPath = root.d.mentions.arr
+    val attachmentsPath = root.d.attachments.arr
+    val attachmentUrlPath = root.url.string
 
     context match {
       case context: BotContext.ReadyBotContext =>
@@ -32,6 +34,7 @@ object MessageCreateHandler {
           content <- contentPath.getOption(json)
           sourceChannelId <- channelIdPath.getOption(json)
           mentionsJson <- mentionsPath.getOption(json)
+          attachmentsJson <- attachmentsPath.getOption(json)
         } yield {
           // ping-pong
           val pingPong = if (content == "ping") {
@@ -71,12 +74,18 @@ object MessageCreateHandler {
               }
 
               val messageLink = s"https://discord.com/channels/$guildId/$sourceChannelId/$sourceMessageId"
+              val attachmentUrls = attachmentsJson.flatMap(attachmentUrlPath.getOption)
 
-              val text =
-                s"""
-                   |$sanitizedContent
+              val text = if (attachmentUrls.isEmpty) {
+                s"""$sanitizedContent
                    |($messageLink)
                    |""".stripMargin
+              } else {
+                s"""$sanitizedContent
+                   |${attachmentUrls.mkString("\n")}
+                   |($messageLink)
+                   |""".stripMargin
+              }
 
               // https://discord.com/developers/docs/reference#image-formatting
               val avatarUrl = authorAvatarOpt.map { authorAvatar => s"https://cdn.discordapp.com/avatars/$authorUserId/$authorAvatar.png" }
