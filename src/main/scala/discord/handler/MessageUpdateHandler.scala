@@ -12,7 +12,8 @@ object MessageUpdateHandler {
       messageId: String,
       channelId: String,
       content: String,
-      mentions: Map[String, String]
+      mentions: Map[String, String],
+      attachmentUrls: Seq[String]
   )
 
   def handle(json: Json)(context: BotContext, hubMessageService: HubMessageService[IO]): IO[BotContext] = {
@@ -43,10 +44,16 @@ object MessageUpdateHandler {
 
               val messageLink = s"https://discord.com/channels/${hubMessage.guildId}/${hubMessage.sourceChannelId}/${hubMessage.sourceMessageId}"
 
-              val text =
-                s"""
-                   |$sanitizedContent ($messageLink)
+              val text = if (payload.attachmentUrls.isEmpty) {
+                s"""$sanitizedContent
+                   |($messageLink)
                    |""".stripMargin
+              } else {
+                s"""$sanitizedContent
+                   |${payload.attachmentUrls.mkString("\n")}
+                   |($messageLink)
+                   |""".stripMargin
+              }
 
               DiscordWebhookClient.editMessage(hubMessage.messageId, text)(context.config.timesHubWebhookId, context.config.timesHubWebhookToken) *>
                 IO.pure(context)
@@ -64,13 +71,16 @@ object MessageUpdateHandler {
     val channelIdPath = root.d.channel_id.string
     val contentPath = root.d.content.string
     val mentionsPath = root.d.mentions.arr
+    val attachmentsPath = root.d.attachments.arr
+    val attachmentUrlPath = root.url.string
 
-    (for {
+    for {
       guildId <- guildIdPath.getOption(json)
       sourceMessageId <- messageIdPath.getOption(json)
       sourceChannelId <- channelIdPath.getOption(json)
       content <- contentPath.getOption(json)
       mentionsJson <- mentionsPath.getOption(json)
+      attachmentsJson <- attachmentsPath.getOption(json)
       mentions = mentionsJson.flatMap { mentionJson =>
         for {
           globalName <- root.global_name.string.getOption(mentionJson)
@@ -80,7 +90,9 @@ object MessageUpdateHandler {
         }
       }.toMap
     } yield {
-      Payload(guildId, sourceMessageId, sourceChannelId, content, mentions)
-    })
+      val attachmentUrls = attachmentsJson.flatMap(attachmentUrlPath.getOption)
+
+      Payload(guildId, sourceMessageId, sourceChannelId, content, mentions, attachmentUrls)
+    }
   }
 }
