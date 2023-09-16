@@ -28,12 +28,12 @@ object GatewayClient {
   // 面倒だったのですべてのイベントを垂れ流すハンドラを引数に取るのみとしている
   def run(
       config: DiscordConfig,
-      jobHandler: (BotContext, Json) => IO[BotContext]
+      jobHandler: (BotContext, Payload[Json]) => IO[BotContext]
   ): IO[Unit] = {
     JdkWSClient.simple[IO].flatMap { client =>
       client.connectHighLevel(WSRequest(gatewayUri)).use { connection =>
         for {
-          jobQueue <- Queue.unbounded[IO, Json]
+          jobQueue <- Queue.unbounded[IO, Payload[Json]]
           initializedContext <- sendIdentity(connection, config)
           interval <- receiveHeartbeatInterval(connection)
           _ <- (
@@ -101,11 +101,12 @@ object GatewayClient {
   /**
    * `Gateway API`から受信したイベントをジョブキューに詰める
    */
-  private def offerReceiveEvent(connection: WSConnectionHighLevel[IO], jobQueue: Queue[IO, Json]): IO[Unit] = {
+  private def offerReceiveEvent(connection: WSConnectionHighLevel[IO], jobQueue: Queue[IO, Payload[Json]]): IO[Unit] = {
     connection.receiveStream
-      .collect({ case WSFrame.Text(text, _) => decode[Json](text) })
-      .collect({ case Right(json) => json })
-      .evalMap({ json => logger.info(json.noSpaces) *> jobQueue.offer(json) })
+      .evalTap({ case WSFrame.Text(text, _) => logger.debug(text) })
+      .collect({ case WSFrame.Text(text, _) => decode[Payload[Json]](text) })
+      .collect({ case Right(payload) => payload })
+      .evalMap({ payload => jobQueue.offer(payload) })
       .compile
       .drain
   }
@@ -114,13 +115,13 @@ object GatewayClient {
    * ジョブキューからイベントを受け取り、ハンドラに処理を委譲する
    */
   private def handleReceiveEvent(
-      jobQueue: Queue[IO, Json],
-      jobHandler: (BotContext, Json) => IO[BotContext]
+      jobQueue: Queue[IO, Payload[Json]],
+      jobHandler: (BotContext, Payload[Json]) => IO[BotContext]
   )(context: BotContext): IO[Unit] = {
     Stream
       .fromQueueUnterminated(jobQueue)
-      .through(_.evalMapAccumulate(context) { case (context1, json) =>
-        jobHandler(context1, json)
+      .through(_.evalMapAccumulate(context) { case (context1, payload) =>
+        jobHandler(context1, payload)
           .map { context2 =>
             (context2, ())
           }

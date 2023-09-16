@@ -1,11 +1,10 @@
 import cats.effect._
 import database.Database
 import database.service.HubMessageService
-import discord.handler.{GuildCreateHandler, MessageCreateHandler, MessageDeleteHandler, MessageUpdateHandler, ReadyHandler, ThreadCreateHandler, ThreadDeleteHandler}
+import discord.payload.Payload
 import discord.payload.Payload.DiscordEvent
 import discord.{BotContext, DiscordConfig, GatewayClient}
 import io.circe.Json
-import io.circe.optics.JsonPath._
 import org.typelevel.log4cats._
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 
@@ -22,22 +21,20 @@ object Main extends IOApp {
         val hubMessageService = new HubMessageService(transactor)
         retry(
           {
-            val jobHandler: (BotContext, Json) => IO[BotContext] = { case (context, json) =>
-              root.t.string.getOption(json) match {
-                case Some(value) =>
-                  DiscordEvent.fromString(value) match {
-                    case Some(DiscordEvent.Ready) => ReadyHandler.handle(json)(context)
-                    case Some(DiscordEvent.MessageCreate) => MessageCreateHandler.handle(json)(context, hubMessageService)
-                    case Some(DiscordEvent.GuildCreate) => GuildCreateHandler.handle(json)(context)
-                    case Some(DiscordEvent.MessageDelete) => MessageDeleteHandler.handle(json)(context, hubMessageService)
-                    case Some(DiscordEvent.MessageUpdate) => MessageUpdateHandler.handle(json)(context, hubMessageService)
-                    case Some(DiscordEvent.ThreadCreate) => ThreadCreateHandler.handle(json)(context)
-                    case Some(DiscordEvent.ThreadDelete) => ThreadDeleteHandler.handle(json)(context, hubMessageService)
-                    case Some(_) => IO.pure(context)
-                    case None => logger.warn("unknown event").as(context)
-                  }
-                case None => IO.pure(context)
-              }
+            val jobHandler: (BotContext, Payload[Json]) => IO[BotContext] = { case (context, payload) =>
+              payload.t
+                .flatMap(DiscordEvent.fromString)
+                .map {
+                  case DiscordEvent.Ready => ???
+                  case DiscordEvent.GuildCreate => ???
+                  case DiscordEvent.MessageCreate => ???
+                  case DiscordEvent.MessageDelete => ???
+                  case DiscordEvent.MessageUpdate => ???
+                  case DiscordEvent.ThreadCreate => ???
+                  case DiscordEvent.ThreadDelete => ???
+                  case _ => IO.pure(context)
+                }
+                .getOrElse(IO.pure(context))
             }
             GatewayClient.run(config, jobHandler)
           },
