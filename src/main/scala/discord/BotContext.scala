@@ -7,11 +7,13 @@ object BotContext {
 
   case class Thread(name: String, id: String, parentId: String)
 
-  case class InitializedBotContext(config: DiscordConfig) extends BotContext
+  case class Init(config: DiscordConfig) extends BotContext
 
-  case class ReadyBotContext(
+  case class Ready(
       config: DiscordConfig,
+      @deprecated("そのうち消す")
       times: List[Channel], // todo idで引けるようになってたほうが嬉しい気がする
+      @deprecated("そのうち消す")
       timesThreads: List[Thread], // todo idで引けるようになってたほうが嬉しい気がする
       meUserId: String
   ) extends BotContext

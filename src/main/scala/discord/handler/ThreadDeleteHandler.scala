@@ -18,8 +18,8 @@ object ThreadDeleteHandler {
 
   def handle(json: Json)(context: BotContext, hubMessageService: HubMessageService[IO]): IO[BotContext] = {
     context match {
-      case BotContext.InitializedBotContext(_) => IO.raiseError(new Exception("unexpected bot context"))
-      case botContext @ BotContext.ReadyBotContext(config, _, timesThreads, _) =>
+      case BotContext.Init(_) => IO.raiseError(new Exception("unexpected bot context"))
+      case botContext @ BotContext.Ready(config, _, timesThreads, _) =>
         val payload = parse(json)
 
         hubMessageService

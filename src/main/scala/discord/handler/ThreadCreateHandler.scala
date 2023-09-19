@@ -8,8 +8,8 @@ import io.circe.optics.JsonPath.root
 object ThreadCreateHandler {
   def handle(json: Json)(context: BotContext): IO[BotContext] = {
     context match {
-      case BotContext.InitializedBotContext(_) => IO.raiseError(new Exception("unexpected bot context"))
-      case botContext @ BotContext.ReadyBotContext(_, times, timesThreads, _) =>
+      case BotContext.Init(_) => IO.raiseError(new Exception("unexpected bot context"))
+      case botContext @ BotContext.Ready(_, times, timesThreads, _) =>
         val namePath = root.d.name.string
         val idPath = root.d.id.string
         val parentIdPath = root.d.parent_id.string

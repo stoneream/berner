@@ -18,7 +18,7 @@ object MessageDeleteHandler {
   def handle(json: Json)(context: BotContext, hubMessageService: HubMessageService[IO]): IO[BotContext] = {
 
     context match {
-      case context: BotContext.ReadyBotContext =>
+      case context: BotContext.Ready =>
         // バカハブ / 削除時ハンドラ
         val payload = parse(json)
         hubMessageService.find(payload.messageId, payload.channelId, payload.guildId).flatMap {

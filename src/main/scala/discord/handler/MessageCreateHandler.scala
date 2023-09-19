@@ -22,7 +22,7 @@ object MessageCreateHandler {
     val mentionsPath = root.d.mentions.arr
 
     context match {
-      case context: BotContext.ReadyBotContext =>
+      case context: BotContext.Ready =>
         (for {
           guildId <- guildIdPath.getOption(json)
           sourceMessageId <- messageIdPath.getOption(json)

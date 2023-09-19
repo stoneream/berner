@@ -1,14 +1,19 @@
+import application.ApplicationContext
+import application.handler.gateway.GatewayReadyHandler
+import application.handler.hub.HubContext
 import cats.effect._
+import cats.effect.std.Queue
+import cats.implicits.catsSyntaxTuple2Parallel
 import database.Database
 import database.service.HubMessageService
-import discord.payload.{GuildCreate, Payload}
+import discord.payload.Payload
 import discord.payload.Payload.DiscordEvent
 import discord.{BotContext, DiscordConfig, GatewayClient}
+import fs2.Stream
 import io.circe.Json
 import org.typelevel.log4cats._
 import org.typelevel.log4cats.slf4j.Slf4jFactory
-import io.circe.generic.auto._, io.circe.syntax._
-import application.lib.CirceConfig.config
+
 import scala.concurrent.duration._
 
 object Main extends IOApp {
@@ -20,34 +25,35 @@ object Main extends IOApp {
     Database.apply.use { transactor =>
       DiscordConfig.apply.use { config =>
         val hubMessageService = new HubMessageService(transactor)
-        retry(
-          {
-            val jobHandler: (BotContext, Payload[Json]) => IO[BotContext] = { case (context, payload) =>
-              payload.t
-                .flatMap(DiscordEvent.fromString)
-                .map {
-                  case DiscordEvent.Ready =>
-                    // todo 自身のIDを取得
-                    ???
-                  case DiscordEvent.GuildCreate =>
-                    // todo 監視するチャンネルを絞り込む
-                    payload.d.flatMap(_.as[GuildCreate.Data].toOption) match {
-                      case Some(data) => ???
-                      case None => ???
-                    }
-                  case DiscordEvent.MessageCreate => ???
-                  case DiscordEvent.MessageDelete => ???
-                  case DiscordEvent.MessageUpdate => ???
-                  case DiscordEvent.ThreadCreate => ???
-                  case DiscordEvent.ThreadDelete => ???
-                  case _ => IO.pure(context)
-                }
-                .getOrElse(IO.pure(context))
+
+        val initialApplicationContext = ApplicationContext(
+          discordBotContext = BotContext.Init(config),
+          hubContext = HubContext.empty
+        )
+
+        Queue
+          .unbounded[IO, Payload[Json]]
+          .flatMap { messageQueue =>
+            val applicationStream = Stream.eval(IO(initialApplicationContext)).flatMap { context =>
+              Stream.fromQueueUnterminated(messageQueue).evalTap { payload =>
+                (for {
+                  d <- payload.d
+                  t <- payload.t
+                  nextContext <- DiscordEvent.fromString(t).collect { case DiscordEvent.Ready =>
+                    GatewayReadyHandler.handle(d).run(context)
+                  }
+                } yield nextContext).getOrElse(IO(context, ()))
+              }
             }
-            GatewayClient.run(config, jobHandler)
-          },
-          100
-        ).as(ExitCode.Success)
+
+            for {
+              _ <- (
+                GatewayClient.run(messageQueue)(config),
+                applicationStream.compile.drain
+              ).parTupled
+            } yield ()
+          }
+          .as(ExitCode.Success)
       }
     }
   }

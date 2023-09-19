@@ -18,7 +18,7 @@ object MessageUpdateHandler {
   def handle(json: Json)(context: BotContext, hubMessageService: HubMessageService[IO]): IO[BotContext] = {
 
     context match {
-      case context: BotContext.ReadyBotContext =>
+      case context: BotContext.Ready =>
         // バカハブ / 編集時ハンドラ
         // todo パーサーがアホなのでどうにかする
         parse(json).fold {

@@ -3,7 +3,7 @@ package discord
 import cats.effect._
 import cats.effect.std.Queue
 import cats.implicits._
-import discord.BotContext.InitializedBotContext
+import discord.BotContext.Init
 import discord.payload.Identity.Intent
 import discord.payload.{GatewayOpCode, Identity, Payload}
 import fs2.Stream
@@ -25,21 +25,15 @@ object GatewayClient {
   // todo gateway api 叩いて url を取得する
   private val gatewayUri = uri"wss://gateway.discord.gg/?v=10&encoding=json"
 
-  // 面倒だったのですべてのイベントを垂れ流すハンドラを引数に取るのみとしている
-  def run(
-      config: DiscordConfig,
-      jobHandler: (BotContext, Payload[Json]) => IO[BotContext]
-  ): IO[Unit] = {
+  def run(messageQueue: Queue[IO, Payload[Json]])(config: DiscordConfig): IO[Unit] = {
     JdkWSClient.simple[IO].flatMap { client =>
       client.connectHighLevel(WSRequest(gatewayUri)).use { connection =>
         for {
-          jobQueue <- Queue.unbounded[IO, Payload[Json]]
-          initializedContext <- sendIdentity(connection, config)
+          _ <- sendIdentity(connection, config)
           interval <- receiveHeartbeatInterval(connection)
           _ <- (
             sendHeartbeat(connection, interval),
-            offerReceiveEvent(connection, jobQueue),
-            handleReceiveEvent(jobQueue, jobHandler)(initializedContext)
+            offerReceiveEvent(connection, messageQueue)
           ).parTupled
         } yield ()
       }
@@ -63,7 +57,7 @@ object GatewayClient {
     for {
       _ <- connection.send(WSFrame.Text(payload.asJson.noSpaces))
     } yield {
-      InitializedBotContext(config)
+      Init(config)
     }
   }
 
@@ -107,29 +101,6 @@ object GatewayClient {
       .collect({ case WSFrame.Text(text, _) => decode[Payload[Json]](text) })
       .collect({ case Right(payload) => payload })
       .evalMap({ payload => jobQueue.offer(payload) })
-      .compile
-      .drain
-  }
-
-  /**
-   * ジョブキューからイベントを受け取り、ハンドラに処理を委譲する
-   */
-  private def handleReceiveEvent(
-      jobQueue: Queue[IO, Payload[Json]],
-      jobHandler: (BotContext, Payload[Json]) => IO[BotContext]
-  )(context: BotContext): IO[Unit] = {
-    Stream
-      .fromQueueUnterminated(jobQueue)
-      .through(_.evalMapAccumulate(context) { case (context1, payload) =>
-        jobHandler(context1, payload)
-          .map { context2 =>
-            (context2, ())
-          }
-          .handleErrorWith { e =>
-            // ジョブキュー内で何らかのエラーが発生してもアプリケーション全体は落ちないようにする
-            logger.error(e)("failed handle event") *> IO.pure((context1, ()))
-          }
-      })
       .compile
       .drain
   }

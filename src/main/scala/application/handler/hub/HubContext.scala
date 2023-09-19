@@ -11,4 +11,9 @@ object HubContext {
   case class Channel(name: String, id: String)
 
   case class Thread(name: String, id: String, parentId: String)
+
+  def empty: HubContext = HubContext(
+    timesChannels = HashMap.empty,
+    timesThreads = HashMap.empty
+  )
 }

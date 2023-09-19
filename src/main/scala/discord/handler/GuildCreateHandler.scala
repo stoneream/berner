@@ -8,8 +8,8 @@ import io.circe.optics.JsonPath.root
 object GuildCreateHandler {
   def handle(json: Json)(context: BotContext): IO[BotContext] = {
     context match {
-      case BotContext.InitializedBotContext(_) => IO.raiseError(new Exception("unexpected bot context"))
-      case BotContext.ReadyBotContext(config, _, _, meUserId) =>
+      case BotContext.Init(_) => IO.raiseError(new Exception("unexpected bot context"))
+      case BotContext.Ready(config, _, _, meUserId) =>
         // ウォッチ対象のサーバーとして登録
         val channelsPath = root.d.channels.each.json
         val channelNamePath = root.name.string
@@ -39,7 +39,7 @@ object GuildCreateHandler {
 
         val timesThreads = threads.filter(thread => times.exists(_.id == thread.parentId))
 
-        val nextContext = BotContext.ReadyBotContext(
+        val nextContext = BotContext.Ready(
           config = config,
           times = times,
           timesThreads = timesThreads,
