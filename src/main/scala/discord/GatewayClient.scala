@@ -25,7 +25,7 @@ object GatewayClient {
   // todo gateway api 叩いて url を取得する
   private val gatewayUri = uri"wss://gateway.discord.gg/?v=10&encoding=json"
 
-  def run(messageQueue: Queue[IO, Payload[Json]])(config: DiscordConfig): IO[Unit] = {
+  def apply(messageQueue: Queue[IO, Payload[Json]])(config: DiscordConfig): IO[Unit] = {
     JdkWSClient.simple[IO].flatMap { client =>
       client.connectHighLevel(WSRequest(gatewayUri)).use { connection =>
         for {

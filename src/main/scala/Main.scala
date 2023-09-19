@@ -2,8 +2,8 @@ import application.ApplicationContext
 import application.handler.gateway.GatewayReadyHandler
 import application.handler.hub.HubContext
 import cats.effect._
-import cats.effect.std.Queue
-import cats.implicits.catsSyntaxTuple2Parallel
+import cats.effect.std.{AtomicCell, Queue}
+import cats.implicits.catsSyntaxParallelSequence1
 import database.Database
 import database.service.HubMessageService
 import discord.payload.Payload
@@ -26,34 +26,29 @@ object Main extends IOApp {
       DiscordConfig.apply.use { config =>
         val hubMessageService = new HubMessageService(transactor)
 
-        val initialApplicationContext = ApplicationContext(
-          discordBotContext = BotContext.Init(config),
-          hubContext = HubContext.empty
-        )
-
-        Queue
-          .unbounded[IO, Payload[Json]]
-          .flatMap { messageQueue =>
-            val applicationStream = Stream.eval(IO(initialApplicationContext)).flatMap { context =>
-              Stream.fromQueueUnterminated(messageQueue).evalTap { payload =>
-                (for {
-                  d <- payload.d
-                  t <- payload.t
-                  nextContext <- DiscordEvent.fromString(t).collect { case DiscordEvent.Ready =>
-                    GatewayReadyHandler.handle(d).run(context)
-                  }
-                } yield nextContext).getOrElse(IO(context, ()))
+        (for {
+          applicationContext <- AtomicCell[IO].of(
+            ApplicationContext(
+              discordBotContext = BotContext.Init(config),
+              hubContext = HubContext.empty
+            )
+          )
+          messageQueue <- Queue.unbounded[IO, Payload[Json]]
+          gatewayClient = GatewayClient.apply(messageQueue)(config)
+          applicationStream = Stream.fromQueueUnterminated(messageQueue).evalTap { payload =>
+            (for {
+              d <- payload.d
+              t <- payload.t
+              handle <- DiscordEvent.fromString(t).collect { case DiscordEvent.Ready =>
+                GatewayReadyHandler.handle(d)
               }
-            }
-
-            for {
-              _ <- (
-                GatewayClient.run(messageQueue)(config),
-                applicationStream.compile.drain
-              ).parTupled
-            } yield ()
+            } yield handle.run(applicationContext)).getOrElse(IO.unit)
           }
-          .as(ExitCode.Success)
+          _ <- List(
+            gatewayClient,
+            applicationStream.compile.drain
+          ).parSequence
+        } yield ()).as(ExitCode.Success)
       }
     }
   }
