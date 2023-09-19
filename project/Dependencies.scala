@@ -69,7 +69,8 @@ object Dependencies {
     "io.circe" %% "circe-generic" % Versions.circe,
     "io.circe" %% "circe-literal" % Versions.circe,
     "io.circe" %% "circe-parser" % Versions.circe,
-    "io.circe" %% "circe-optics" % Versions.circe
+    "io.circe" %% "circe-optics" % Versions.circe,
+    "io.circe" %% "circe-generic-extras" % Versions.circe
   )
 
   // database

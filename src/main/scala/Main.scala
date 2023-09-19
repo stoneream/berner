@@ -1,13 +1,14 @@
 import cats.effect._
 import database.Database
 import database.service.HubMessageService
-import discord.payload.Payload
+import discord.payload.{GuildCreate, Payload}
 import discord.payload.Payload.DiscordEvent
 import discord.{BotContext, DiscordConfig, GatewayClient}
 import io.circe.Json
 import org.typelevel.log4cats._
 import org.typelevel.log4cats.slf4j.Slf4jFactory
-
+import io.circe.generic.auto._, io.circe.syntax._
+import application.lib.CirceConfig.config
 import scala.concurrent.duration._
 
 object Main extends IOApp {
@@ -25,8 +26,15 @@ object Main extends IOApp {
               payload.t
                 .flatMap(DiscordEvent.fromString)
                 .map {
-                  case DiscordEvent.Ready => ???
-                  case DiscordEvent.GuildCreate => ???
+                  case DiscordEvent.Ready =>
+                    // todo 自身のIDを取得
+                    ???
+                  case DiscordEvent.GuildCreate =>
+                    // todo 監視するチャンネルを絞り込む
+                    payload.d.flatMap(_.as[GuildCreate.Data].toOption) match {
+                      case Some(data) => ???
+                      case None => ???
+                    }
                   case DiscordEvent.MessageCreate => ???
                   case DiscordEvent.MessageDelete => ???
                   case DiscordEvent.MessageUpdate => ???
