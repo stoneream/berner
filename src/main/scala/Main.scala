@@ -2,6 +2,7 @@ import application.ApplicationContext
 import application.handler.gateway.GatewayReadyHandler
 import application.handler.hub.HubContext
 import application.handler.hub.guild.HubGuildCreateHandler
+import application.handler.hub.message.HubMessageCreateHandler
 import cats.effect._
 import cats.effect.std.{AtomicCell, Queue}
 import cats.implicits.catsSyntaxParallelSequence1
@@ -25,8 +26,6 @@ object Main extends IOApp {
 
     Database.apply.use { transactor =>
       DiscordConfig.apply.use { config =>
-        val hubMessageService = new HubMessageService(transactor)
-
         (for {
           applicationContext <- AtomicCell[IO].of(
             ApplicationContext(
@@ -34,6 +33,8 @@ object Main extends IOApp {
               hubContext = HubContext.empty
             )
           )
+          // todo こいつどうにかしたほうがいい
+          hubMessageService = new HubMessageService(transactor)
           messageQueue <- Queue.unbounded[IO, Payload[Json]]
           gatewayClient = GatewayClient.apply(messageQueue)(config)
           applicationStream = Stream.fromQueueUnterminated(messageQueue).evalTap { payload =>
@@ -43,7 +44,7 @@ object Main extends IOApp {
               handle <- DiscordEvent.fromString(t).collect {
                 case DiscordEvent.Ready => GatewayReadyHandler.handle(d)
                 case DiscordEvent.GuildCreate => HubGuildCreateHandler.handle(d)
-                case DiscordEvent.MessageCreate => ???
+                case DiscordEvent.MessageCreate => HubMessageCreateHandler.handle(d)(hubMessageService)
                 case DiscordEvent.MessageUpdate => ???
                 case DiscordEvent.MessageDelete => ???
                 case DiscordEvent.ChannelCreate => ???
