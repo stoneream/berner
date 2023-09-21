@@ -15,6 +15,7 @@ object BotContext {
       times: List[Channel], // todo idで引けるようになってたほうが嬉しい気がする
       @deprecated("そのうち消す")
       timesThreads: List[Thread], // todo idで引けるようになってたほうが嬉しい気がする
-      meUserId: String
+      meUserId: String, // todo userオブジェクト持ってる方が良さそう
+      me: payload.Ready.User
   ) extends BotContext
 }

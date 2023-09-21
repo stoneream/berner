@@ -2,7 +2,6 @@ package application.handler.hub.guild
 
 import application.ApplicationContext
 import application.handler.hub.HubContext
-import application.handler.hub.HubContext.Channel
 import cats.data.ReaderT
 import cats.effect.IO
 import discord.BotContext
@@ -17,7 +16,7 @@ object HubGuildCreateHandler {
   def handle(json: Json): ApplicationContext.Handler[Unit] = ReaderT { state =>
     state.evalGetAndUpdate { context =>
       context.discordBotContext match {
-        case botContext: BotContext.Ready =>
+        case _: BotContext.Ready =>
           json.as[GuildCreate.Data].toOption match {
             case Some(d) =>
               // timesで始まるチャンネルを監視対象として登録
@@ -31,7 +30,7 @@ object HubGuildCreateHandler {
               val timesThreads = d.threads
                 .filter(t => timesChannels.contains(t.parentId))
                 .map { t =>
-                  (t.id, HubContext.Thread(t.name, t.id))
+                  (t.id, HubContext.Thread(t.name, t.id, t.parentId))
                 }
                 .toMap
 
@@ -48,6 +47,6 @@ object HubGuildCreateHandler {
           }
         case _ => IO.raiseError(new RuntimeException("Unexpected BotContext"))
       }
-    }
+    }.void
   }
 }
