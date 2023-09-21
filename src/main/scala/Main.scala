@@ -1,6 +1,7 @@
 import application.ApplicationContext
 import application.handler.gateway.GatewayReadyHandler
 import application.handler.hub.HubContext
+import application.handler.hub.guild.HubGuildCreateHandler
 import cats.effect._
 import cats.effect.std.{AtomicCell, Queue}
 import cats.implicits.catsSyntaxParallelSequence1
@@ -39,8 +40,17 @@ object Main extends IOApp {
             (for {
               d <- payload.d
               t <- payload.t
-              handle <- DiscordEvent.fromString(t).collect { case DiscordEvent.Ready =>
-                GatewayReadyHandler.handle(d)
+              handle <- DiscordEvent.fromString(t).collect {
+                case DiscordEvent.Ready => GatewayReadyHandler.handle(d)
+                case DiscordEvent.GuildCreate => HubGuildCreateHandler.handle(d)
+                case DiscordEvent.MessageCreate => ???
+                case DiscordEvent.MessageUpdate => ???
+                case DiscordEvent.MessageDelete => ???
+                case DiscordEvent.ChannelCreate => ???
+                case DiscordEvent.ChannelUpdate => ???
+                case DiscordEvent.ChannelDelete => ???
+                case DiscordEvent.ThreadCreate => ???
+                case DiscordEvent.ThreadDelete => ???
               }
             } yield handle.run(applicationContext)).getOrElse(IO.unit)
           }

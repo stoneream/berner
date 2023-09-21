@@ -3,8 +3,8 @@ package application.handler.hub
 import scala.collection.immutable.HashMap
 
 case class HubContext(
-    timesChannels: HashMap[String, HubContext.Channel],
-    timesThreads: HashMap[String, HubContext.Thread]
+    timesChannels: Map[String, HubContext.Channel],
+    timesThreads: Map[String, HubContext.Thread]
 )
 
 object HubContext {

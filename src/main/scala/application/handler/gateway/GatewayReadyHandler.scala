@@ -24,7 +24,8 @@ object GatewayReadyHandler {
                 config = botContext.config,
                 times = List.empty,
                 timesThreads = List.empty,
-                meUserId = d.user.id
+                meUserId = d.user.id,
+                me = d.user
               )
               val next = context.copy(discordBotContext = botContext2)
               IO(next)
