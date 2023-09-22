@@ -2,7 +2,8 @@ import application.ApplicationContext
 import application.handler.gateway.GatewayReadyHandler
 import application.handler.hub.HubContext
 import application.handler.hub.guild.HubGuildCreateHandler
-import application.handler.hub.message.HubMessageCreateHandler
+import application.handler.hub.message.{HubMessageCreateHandler, HubMessageDeleteHandler, HubMessageUpdateHandler}
+import application.handler.hub.thread.HubThreadCreateHandler
 import cats.effect._
 import cats.effect.std.{AtomicCell, Queue}
 import cats.implicits.catsSyntaxParallelSequence1
@@ -15,8 +16,6 @@ import fs2.Stream
 import io.circe.Json
 import org.typelevel.log4cats._
 import org.typelevel.log4cats.slf4j.Slf4jFactory
-
-import scala.concurrent.duration._
 
 object Main extends IOApp {
   private implicit val logging: LoggerFactory[IO] = Slf4jFactory.create[IO]
@@ -45,34 +44,28 @@ object Main extends IOApp {
                 case DiscordEvent.Ready => GatewayReadyHandler.handle(d)
                 case DiscordEvent.GuildCreate => HubGuildCreateHandler.handle(d)
                 case DiscordEvent.MessageCreate => HubMessageCreateHandler.handle(d)(hubMessageService)
-                case DiscordEvent.MessageUpdate => ???
-                case DiscordEvent.MessageDelete => ???
+                case DiscordEvent.MessageUpdate => HubMessageUpdateHandler.handle(d)(hubMessageService)
+                case DiscordEvent.MessageDelete => HubMessageDeleteHandler.handle(d)(hubMessageService)
+                /* todo impl
                 case DiscordEvent.ChannelCreate => ???
                 case DiscordEvent.ChannelUpdate => ???
                 case DiscordEvent.ChannelDelete => ???
-                case DiscordEvent.ThreadCreate => ???
+                 */
+                case DiscordEvent.ThreadCreate => HubThreadCreateHandler.handle(d)
                 case DiscordEvent.ThreadDelete => ???
               }
-            } yield handle.run(applicationContext)).getOrElse(IO.unit)
+            } yield {
+              handle.run(applicationContext).attempt.map {
+                case Left(e) => logger.error(e)("failed to handle event")
+                case Right(_) => IO.unit
+              }
+            }).getOrElse(IO.unit)
           }
           _ <- List(
             gatewayClient,
             applicationStream.compile.drain
           ).parSequence
         } yield ()).as(ExitCode.Success)
-      }
-    }
-  }
-
-  private def retry[A](ioa: IO[A], maxRetries: Int): IO[A] = {
-    val logger = LoggerFactory.getLogger
-
-    ioa.handleErrorWith { error =>
-      if (maxRetries > 0) {
-        logger.error(error)(s"failed to connect (maxRetries=$maxRetries)") *>
-          IO.sleep(5.seconds) *> retry(ioa, maxRetries - 1)
-      } else {
-        IO.raiseError(error)
       }
     }
   }
