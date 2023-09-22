@@ -3,7 +3,7 @@ import application.handler.gateway.GatewayReadyHandler
 import application.handler.hub.HubContext
 import application.handler.hub.guild.HubGuildCreateHandler
 import application.handler.hub.message.{HubMessageCreateHandler, HubMessageDeleteHandler, HubMessageUpdateHandler}
-import application.handler.hub.thread.HubThreadCreateHandler
+import application.handler.hub.thread.{HubThreadCreateHandler, HubThreadDeleteHandler}
 import cats.effect._
 import cats.effect.std.{AtomicCell, Queue}
 import cats.implicits.catsSyntaxParallelSequence1
@@ -52,7 +52,7 @@ object Main extends IOApp {
                 case DiscordEvent.ChannelDelete => ???
                  */
                 case DiscordEvent.ThreadCreate => HubThreadCreateHandler.handle(d)
-                case DiscordEvent.ThreadDelete => ???
+                case DiscordEvent.ThreadDelete => HubThreadDeleteHandler.handle(d)(hubMessageService)
               }
             } yield {
               handle.run(applicationContext).attempt.map {

@@ -95,7 +95,7 @@ object HubMessageCreateHandler {
         messageId <- root.id.string.getOption(json)
       } yield (channelId, messageId)
 
-      IO(result.getOrElse(IO.raiseError(new RuntimeException("unexpected response"))))
+      result.fold[IO[(String, String)]](IO.raiseError(new RuntimeException("unexpected response")))(IO.pure)
     }
   }
 

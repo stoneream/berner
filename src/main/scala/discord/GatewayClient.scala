@@ -97,7 +97,10 @@ object GatewayClient {
    */
   private def offerReceiveEvent(connection: WSConnectionHighLevel[IO], jobQueue: Queue[IO, Payload[Json]]): IO[Unit] = {
     connection.receiveStream
-      .evalTap({ case WSFrame.Text(text, _) => logger.debug(text) })
+      .evalTap({
+        case WSFrame.Text(text, _) => logger.debug(text)
+        case _ => IO.unit
+      })
       .collect({ case WSFrame.Text(text, _) => decode[Payload[Json]](text) })
       .collect({ case Right(payload) => payload })
       .evalMap({ payload => jobQueue.offer(payload) })
