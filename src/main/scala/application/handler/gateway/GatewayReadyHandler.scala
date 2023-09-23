@@ -6,13 +6,11 @@ import cats.effect.IO
 import discord.BotContext
 import discord.payload.Ready
 import io.circe.Json
+import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
-import io.circe.generic.extras.Configuration.default
-import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 object GatewayReadyHandler {
-  private val logger = Slf4jLogger.getLogger[IO]
-  private implicit val config = default.withSnakeCaseMemberNames
+  private implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
 
   def handle(json: Json): ApplicationContext.Handler[Unit] = ReaderT { state =>
     state.evalGetAndUpdate { context =>
@@ -22,9 +20,6 @@ object GatewayReadyHandler {
             case Some(d) =>
               val botContext2 = BotContext.Ready(
                 config = botContext.config,
-                times = List.empty,
-                timesThreads = List.empty,
-                meUserId = d.user.id,
                 me = d.user
               )
               val next = context.copy(discordBotContext = botContext2)
