@@ -11,14 +11,11 @@ import discord.{BotContext, DiscordWebhookClient}
 import io.circe.Json
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
-import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.time.LocalDateTime
 import scala.util.control.Exception._
 
 object HubMessageCreateHandler {
-  private val logger = Slf4jLogger.getLogger[IO]
-
   def handle(json: Json)(hubMessageService: HubMessageService[IO]): ApplicationContext.Handler[Unit] = ReaderT { state =>
     for {
       context <- state.get
