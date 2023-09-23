@@ -3,16 +3,10 @@ package discord
 sealed abstract class BotContext() {}
 
 object BotContext {
-  case class Channel(name: String, id: String)
+  case class Init(config: DiscordConfig) extends BotContext
 
-  case class Thread(name: String, id: String, parentId: String)
-
-  case class InitializedBotContext(config: DiscordConfig) extends BotContext
-
-  case class ReadyBotContext(
+  case class Ready(
       config: DiscordConfig,
-      times: List[Channel], // todo idで引けるようになってたほうが嬉しい気がする
-      timesThreads: List[Thread], // todo idで引けるようになってたほうが嬉しい気がする
-      meUserId: String
+      me: payload.Ready.User
   ) extends BotContext
 }
