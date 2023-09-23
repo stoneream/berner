@@ -1,13 +1,11 @@
-import application.ApplicationContext
-import application.ApplicationContext.ApplicationContextState
+import application.ApplicationContext
 import application.handler.DoNothingHandler
 import application.handler.gateway.GatewayReadyHandler
 import application.handler.hub.HubContext
 import application.handler.hub.guild.HubGuildCreateHandler
 import application.handler.hub.message.{HubMessageCreateHandler, HubMessageDeleteHandler, HubMessageUpdateHandler}
 import application.handler.hub.thread.{HubThreadCreateHandler, HubThreadDeleteHandler}
-import application.handler.ping.PingHandler
-import cats.data.{ReaderT, StateT}
+import application.handler.ping.PingHandler
 import cats.effect._
 import cats.effect.std.{AtomicCell, Queue}
 import cats.implicits.catsSyntaxParallelSequence1
