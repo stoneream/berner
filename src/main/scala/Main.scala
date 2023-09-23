@@ -1,10 +1,13 @@
 import application.ApplicationContext
+import application.ApplicationContext.ApplicationContextState
+import application.handler.DoNothingHandler
 import application.handler.gateway.GatewayReadyHandler
 import application.handler.hub.HubContext
 import application.handler.hub.guild.HubGuildCreateHandler
 import application.handler.hub.message.{HubMessageCreateHandler, HubMessageDeleteHandler, HubMessageUpdateHandler}
 import application.handler.hub.thread.{HubThreadCreateHandler, HubThreadDeleteHandler}
 import application.handler.ping.PingHandler
+import cats.data.{ReaderT, StateT}
 import cats.effect._
 import cats.effect.std.{AtomicCell, Queue}
 import cats.implicits.catsSyntaxParallelSequence1
@@ -38,16 +41,17 @@ object Main extends IOApp {
           messageQueue <- Queue.unbounded[IO, Payload[Json]]
           gatewayClient = GatewayClient.apply(messageQueue)(config)
           applicationStream = Stream.fromQueueUnterminated(messageQueue).evalTap { payload =>
-            (for {
+            val handlerOpt = for {
               d <- payload.d
               t <- payload.t
-              handle <- DiscordEvent.fromString(t).collect {
+              handle <- DiscordEvent.fromString(t).map {
                 case DiscordEvent.Ready => GatewayReadyHandler.handle(d)
                 case DiscordEvent.GuildCreate => HubGuildCreateHandler.handle(d)
                 case DiscordEvent.MessageCreate =>
-                  PingHandler.handle(d).flatMap { _ =>
-                    HubMessageCreateHandler.handle(d)(hubMessageService)
-                  }
+                  List(
+                    HubMessageCreateHandler.handle(d)(hubMessageService),
+                    PingHandler.handle(d)
+                  ).parSequence
                 case DiscordEvent.MessageUpdate => HubMessageUpdateHandler.handle(d)(hubMessageService)
                 case DiscordEvent.MessageDelete => HubMessageDeleteHandler.handle(d)(hubMessageService)
                 /* todo impl
@@ -57,13 +61,13 @@ object Main extends IOApp {
                  */
                 case DiscordEvent.ThreadCreate => HubThreadCreateHandler.handle(d)
                 case DiscordEvent.ThreadDelete => HubThreadDeleteHandler.handle(d)(hubMessageService)
+                case _ => DoNothingHandler.handle
               }
-            } yield {
-              handle.run(applicationContext).attempt.map {
-                case Left(e) => logger.error(e)("failed to handle event")
-                case Right(_) => IO.unit
-              }
-            }).getOrElse(IO.unit)
+            } yield handle.run(applicationContext).attempt.flatMap {
+              case Left(e) => logger.error(e)("failed to handle payload")
+              case Right(_) => IO.unit
+            }
+            handlerOpt.getOrElse(IO.unit)
           }
           _ <- List(
             gatewayClient,

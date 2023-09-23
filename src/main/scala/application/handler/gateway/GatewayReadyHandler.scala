@@ -6,7 +6,7 @@ import cats.effect.IO
 import discord.BotContext
 import discord.payload.Ready
 import io.circe.Json
-import io.circe.generic.auto._
+import io.circe.generic.extras.auto._
 import io.circe.generic.extras.Configuration.default
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 

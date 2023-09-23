@@ -7,7 +7,7 @@ import database.service.HubMessageService
 import discord.payload.MessageUpdate
 import discord.{BotContext, DiscordWebhookClient}
 import io.circe.Json
-import io.circe.generic.auto._
+import io.circe.generic.extras.auto._
 import io.circe.generic.extras.Configuration
 
 import scala.util.control.Exception.allCatch
@@ -16,7 +16,7 @@ object HubMessageUpdateHandler {
   private implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
 
   def handle(json: Json)(hubMessageService: HubMessageService[IO]): ApplicationContext.Handler[Unit] = ReaderT { state =>
-    state.get.map { context =>
+    state.get.flatMap { context =>
       context.discordBotContext match {
         case botContext: BotContext.Ready =>
           val botConfig = botContext.config
@@ -45,7 +45,7 @@ object HubMessageUpdateHandler {
 
         case _ => IO.raiseError(new RuntimeException("Unexpected BotContext"))
       }
-    }.void
+    }
   }
 
   private def sanitizeContent(content: String, mentions: Seq[MessageUpdate.Mention]): IO[String] = {

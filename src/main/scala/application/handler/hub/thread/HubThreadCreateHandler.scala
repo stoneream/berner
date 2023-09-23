@@ -7,7 +7,7 @@ import cats.effect.IO
 import discord.BotContext
 import discord.payload.ThreadCreate
 import io.circe.Json
-import io.circe.generic.auto._
+import io.circe.generic.extras.auto._
 import io.circe.generic.extras.Configuration
 
 object HubThreadCreateHandler {

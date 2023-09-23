@@ -13,7 +13,7 @@ object MessageCreate {
   case class Author(
       id: String,
       username: String,
-      avatar: String
+      avatar: Option[String]
   )
 
   case class Mention(

@@ -1,6 +1,7 @@
 package application.handler.hub.message
 
 import application.ApplicationContext
+import application.handler.hub.HubContext
 import application.model.HubMessage
 import cats.data.ReaderT
 import cats.effect.IO
@@ -8,41 +9,29 @@ import database.service.HubMessageService
 import discord.payload.MessageCreate
 import discord.{BotContext, DiscordWebhookClient}
 import io.circe.Json
-import io.circe.generic.auto._
 import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.auto._
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.time.LocalDateTime
 import scala.util.control.Exception._
 
 object HubMessageCreateHandler {
-  private implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
+  private val logger = Slf4jLogger.getLogger[IO]
 
   def handle(json: Json)(hubMessageService: HubMessageService[IO]): ApplicationContext.Handler[Unit] = ReaderT { state =>
-    state.get.map { context =>
-      val hubContext = context.hubContext
-      context.discordBotContext match {
+    for {
+      context <- state.get
+      hubContext = context.hubContext
+      _ <- context.discordBotContext match {
         case botContext: BotContext.Ready =>
           val botConfig = botContext.config
-          json
-            .as[MessageCreate.Data]
-            .toOption
-            .map { d =>
-              val authorIsMe = d.author.id == botContext.me.id
-              val hasTimes = hubContext.timesChannels.contains(d.channelId)
-              val hasTimesThreads = hubContext.timesThreads.contains(d.channelId)
-
-              if (!authorIsMe && (hasTimes || hasTimesThreads)) {
-
+          asMessageCreateData(json).flatMap { d =>
+            isTargetMessage(d, botContext, hubContext).flatMap { isTarget =>
+              if (isTarget) {
                 for {
                   sanitizedContent <- sanitizeContent(d.content, d.mentions)
-                  text = {
-                    // templating
-                    val messageLink = s"https://discord.com/channels/${d.guildId}/${d.channelId}/${d.id}"
-                    s"""
-                       |$sanitizedContent
-                       |($messageLink)
-                       |""".stripMargin
-                  }
+                  text <- templating(sanitizedContent, d)
                   postHubResult <- postHub(d, text)(botConfig.timesHubWebhookId, botConfig.timesHubWebhookToken)
                   (hubChannelId, hubMessageId) = postHubResult
                   _ <- writeHubMessage(d.id, d.channelId, hubMessageId, hubChannelId, d.guildId)(hubMessageService)
@@ -50,12 +39,40 @@ object HubMessageCreateHandler {
               } else {
                 // do nothing
                 IO.unit
-              }
+              }.map(_ => {})
             }
-            .getOrElse(IO.raiseError(new RuntimeException("Unexpected Json")))
+          }
         case _ => IO.raiseError(new RuntimeException("Unexpected BotContext"))
       }
-    }.void
+    } yield ()
+  }
+
+  private def asMessageCreateData(json: Json): IO[MessageCreate.Data] = {
+    implicit val config = Configuration.default.withSnakeCaseMemberNames
+
+    json.as[MessageCreate.Data] match {
+      case Left(e) => IO.raiseError(new RuntimeException("Unexpected Json", e))
+      case Right(value) => IO.pure(value)
+    }
+  }
+
+  private def isTargetMessage(data: MessageCreate.Data, botContext: BotContext.Ready, hubContext: HubContext): IO[Boolean] = {
+    val authorIsMe = data.author.id == botContext.me.id
+    val hasTimes = hubContext.timesChannels.contains(data.channelId)
+    val hasTimesThreads = hubContext.timesThreads.contains(data.channelId)
+    val result = !authorIsMe && (hasTimes || hasTimesThreads)
+
+    IO.pure(result)
+  }
+
+  private def templating(text: String, data: MessageCreate.Data): IO[String] = {
+    val messageLink = s"https://discord.com/channels/${data.guildId}/${data.channelId}/${data.id}"
+    val message = s"""
+                     |$text
+                     |($messageLink)
+                     |""".stripMargin
+
+    IO.pure(message)
   }
 
   private def sanitizeContent(content: String, mentions: Seq[MessageCreate.Mention]): IO[String] = {
@@ -87,9 +104,12 @@ object HubMessageCreateHandler {
     import io.circe.optics.JsonPath._
 
     // https://discord.com/developers/docs/reference#image-formatting
-    val avatarUrl = s"https://cdn.discordapp.com/avatars/${data.author.id}/${data.author.avatar}.png"
 
-    DiscordWebhookClient.execute(text, data.author.username, Some(avatarUrl))(webhookId, webhookToken).flatMap { json =>
+    val avatarUrl = data.author.avatar.map { avatar =>
+      s"https://cdn.discordapp.com/avatars/${data.author.id}/$avatar.png"
+    }
+
+    DiscordWebhookClient.execute(text, data.author.username, avatarUrl)(webhookId, webhookToken).flatMap { json =>
       val result = for {
         channelId <- root.channel_id.string.getOption(json)
         messageId <- root.id.string.getOption(json)

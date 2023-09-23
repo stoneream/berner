@@ -8,7 +8,7 @@ import database.service.HubMessageService
 import discord.payload.ThreadDelete
 import discord.{BotContext, DiscordApiClient}
 import io.circe.Json
-import io.circe.generic.auto._
+import io.circe.generic.extras.auto._
 import io.circe.generic.extras.Configuration
 
 import java.time.LocalDateTime
