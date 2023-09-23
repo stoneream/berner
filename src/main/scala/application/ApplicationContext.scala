@@ -1,7 +1,7 @@
 package application
 
 import application.handler.hub.HubContext
-import cats.data.{ReaderT, StateT}
+import cats.data.ReaderT
 import cats.effect.IO
 import cats.effect.std.AtomicCell
 

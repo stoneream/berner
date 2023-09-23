@@ -2,8 +2,7 @@ package application.handler.ping
 
 import application.ApplicationContext
 import cats.data.ReaderT
-import cats.effect.IO
-import database.service.HubMessageService
+import cats.effect.IO
 import discord.payload.MessageCreate
 import discord.{BotContext, DiscordApiClient}
 import io.circe.Json

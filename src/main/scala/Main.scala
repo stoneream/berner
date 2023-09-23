@@ -4,6 +4,7 @@ import application.handler.hub.HubContext
 import application.handler.hub.guild.HubGuildCreateHandler
 import application.handler.hub.message.{HubMessageCreateHandler, HubMessageDeleteHandler, HubMessageUpdateHandler}
 import application.handler.hub.thread.{HubThreadCreateHandler, HubThreadDeleteHandler}
+import application.handler.ping.PingHandler
 import cats.effect._
 import cats.effect.std.{AtomicCell, Queue}
 import cats.implicits.catsSyntaxParallelSequence1
@@ -43,7 +44,10 @@ object Main extends IOApp {
               handle <- DiscordEvent.fromString(t).collect {
                 case DiscordEvent.Ready => GatewayReadyHandler.handle(d)
                 case DiscordEvent.GuildCreate => HubGuildCreateHandler.handle(d)
-                case DiscordEvent.MessageCreate => HubMessageCreateHandler.handle(d)(hubMessageService)
+                case DiscordEvent.MessageCreate =>
+                  PingHandler.handle(d).flatMap { _ =>
+                    HubMessageCreateHandler.handle(d)(hubMessageService)
+                  }
                 case DiscordEvent.MessageUpdate => HubMessageUpdateHandler.handle(d)(hubMessageService)
                 case DiscordEvent.MessageDelete => HubMessageDeleteHandler.handle(d)(hubMessageService)
                 /* todo impl
