@@ -13,6 +13,8 @@ jobs:
           TZ: 'Asia/Tokyo'
         id: get-current-date
         run: echo "value=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+      # https://github.com/sbt/sbt-dynver
+      # > In order to be recognized by sbt-dynver, by default tags must begin with the lowercase letter 'v' followed by a digit.
       - name: Create Tag
         run: |
           git config --global user.name "github-actions[bot]"
