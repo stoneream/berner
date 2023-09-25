@@ -10,7 +10,8 @@ inThisBuild(
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
-    scalafmtOnCompile := true
+    scalafmtOnCompile := true,
+    dynverVTagPrefix := false
   )
 )
 
@@ -53,6 +54,7 @@ lazy val root = (project in file("."))
     Universal / javaOptions ++= List(
       "-Dpidfile.path=/dev/null"
     )
+    dockerBaseImage := "azul/zulu-openjdk:11-latest"
   )
 //  .aggregate(subProject)
 
