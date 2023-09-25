@@ -17,7 +17,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a ${{ github.ref_name }}-v${{ steps.get-current-date.outputs.value }} -m "Released at ${{ steps.get-current-date.outputs.value }}"
+          git tag -a v-${{ github.ref_name }}-${{ steps.get-current-date.outputs.value }} -m "Released at ${{ steps.get-current-date.outputs.value }}"
       - name: Setup Scala
         uses: olafurpg/setup-scala@v13
         with:
