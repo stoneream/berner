@@ -20,8 +20,8 @@ inThisBuild(
 inThisBuild(
   List(
     organization := "io.github.stoneream",
-    homepage := Some(url("https://PROJECT-URL-HERE")),
-    licenses := List("LICENSE NAME HERE" -> url("https://LICENSE-URL-HERE")),
+    homepage := Some(url("https://github.com/stoneream/berner")),
+    licenses := List("MIT License" -> url("https://github.com/stoneream/berner/blob/main/LICENSE")),
     developers := List(
       Developer(
         "stoneream",
