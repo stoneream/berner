@@ -39,21 +39,20 @@ inThisBuild(
 // === project setting ===
 
 lazy val root = (project in file("."))
-  .settings(
-    name := "berner",
-    libraryDependencies ++= Dependencies.deps,
-    publish / skip := true,
-    dockerBaseImage := "azul/zulu-openjdk:11-latest",
-    Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
-    Universal / javaOptions ++= List(
-      "-Dpidfile.path=/dev/null"
-    )
-  )
   .enablePlugins(
     DockerPlugin,
     JavaAgent, // todo https://github.com/prometheus/jmx_exporter
     JavaAppPackaging,
     UniversalPlugin
+  )
+  .settings(
+    name := "berner",
+    libraryDependencies ++= Dependencies.deps,
+    publish / skip := true,
+    Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
+    Universal / javaOptions ++= List(
+      "-Dpidfile.path=/dev/null"
+    )
   )
 //  .aggregate(subProject)
 

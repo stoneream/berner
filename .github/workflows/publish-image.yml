@@ -1,0 +1,28 @@
+name : Publish Docker Image
+
+on:
+  workflow_dispatch:
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Get current date
+        env:
+          TZ: 'Asia/Tokyo'
+        id: get-current-date
+        run: echo "value=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+      - name: Create Tag
+        run: git tag -a ${{ github.ref_name }}-v${{ steps.get-current-date.outputs.value }} -m "Released at ${{ steps.get-current-date.outputs.current-date }}"
+      - name: Setup Scala
+        uses: olafurpg/setup-scala@v13
+        with:
+          java-version: zulu@1.11
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push
+        run: sbt version
