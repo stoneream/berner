@@ -53,7 +53,7 @@ lazy val root = (project in file("."))
     Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
     Universal / javaOptions ++= List(
       "-Dpidfile.path=/dev/null"
-    )
+    ),
     dockerBaseImage := "azul/zulu-openjdk:11-latest"
   )
 //  .aggregate(subProject)
