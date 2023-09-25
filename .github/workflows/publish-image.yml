@@ -14,8 +14,10 @@ jobs:
         id: get-current-date
         run: echo "value=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
       - name: Create Tag
-        uses: actions/checkout@v2
-        run: git tag -a ${{ github.ref_name }}-v${{ steps.get-current-date.outputs.value }} -m "Released at ${{ steps.get-current-date.outputs.value }}"
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a ${{ github.ref_name }}-v${{ steps.get-current-date.outputs.value }} -m "Released at ${{ steps.get-current-date.outputs.value }}"
       - name: Setup Scala
         uses: olafurpg/setup-scala@v13
         with:
