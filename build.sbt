@@ -2,6 +2,7 @@
 
 inThisBuild(
   List(
+    version := git.gitCurrentTags.value.headOption.getOrElse("0.0.0-SNAPSHOT"),
     scalaVersion := "2.13.11",
     scalacOptions ++= List(
       "-Ywarn-unused",
@@ -10,8 +11,7 @@ inThisBuild(
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
-    scalafmtOnCompile := true,
-    dynverVTagPrefix := false
+    scalafmtOnCompile := true
   )
 )
 
