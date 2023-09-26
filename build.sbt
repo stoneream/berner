@@ -54,7 +54,8 @@ lazy val root = (project in file("."))
     Universal / javaOptions ++= List(
       "-Dpidfile.path=/dev/null"
     ),
-    dockerBaseImage := "azul/zulu-openjdk:11-latest"
+    dockerBaseImage := "azul/zulu-openjdk:11-latest",
+    dockerUsername := Some("stoneream")
   )
 //  .aggregate(subProject)
 
