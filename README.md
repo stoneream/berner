@@ -4,12 +4,7 @@
 
 ## About
 
-http4sでdiscordのbotを書いてみるテスト
-
-## GitHub Actionsの設定
-
-以下を参照  
-[sbt/sbt-ci-release: sbt plugin to automate Sonatype releases from GitHub Actions](https://github.com/sbt/sbt-ci-release#secrets)
+http4sでdiscordのbotを書いてる
 
 ## マイグレーションについて
 
@@ -36,7 +31,7 @@ $ flyway -configFiles="flyway.sample.conf" migrate
 # Successfully applied 1 migration to schema `database_name`, now at version v1 (execution time 00:00.039s)
 ```
 
-## Discord関連のメモ
+## Discordの設定
 
 - `hub-times`には`times-`で始まるチャンネルのメッセージが転送される
   - 前提条件は以下
@@ -56,12 +51,16 @@ $ flyway -configFiles="flyway.sample.conf" migrate
 sbt docker:publishLocal
 ```
 
+### Ref
+
 Docker Plugin — sbt-native-packager 1.9.0 documentation : https://www.scala-sbt.org/sbt-native-packager/formats/docker.html
 
 ## Dockerイメージの実行例
 
+stoneream/berner general - Docker Hub : https://hub.docker.com/repository/docker/stoneream/berner/general
+
 ```
-docker run -it --rm --env-file ./.env berner:0.1.0-SNAPSHOT
+docker run -it --rm --env-file ./.env berner:VERSION
 ```
 
 必要に応じて`--add-host=host.docker.internal:host-gateway`
@@ -78,3 +77,12 @@ docker run -it --rm --env-file ./.env berner:0.1.0-SNAPSHOT
 | BERNER_DATABASE_PRIMARY_NAME           | データベースの名前                      |                                                             |
 | BERNER_DATABASE_PRIMARY_USER           | データベースのユーザー名                   |                                                             |
 | BERNER_DATABASE_PRIMARY_PASSWORD       | データベースのパスワード                   |                                                             |
+
+## メトリクスの取得
+
+jmx-exporterを導入している。  
+設定ファイルを食わせてよしなにメトリクスを取得する。  
+
+### Ref
+
+- prometheus/jmx_exporter: A process for exposing JMX Beans via HTTP for Prometheus consumption : https://github.com/prometheus/jmx_exporter
