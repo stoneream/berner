@@ -4,6 +4,7 @@ object Dependencies {
 
   object Versions {
     val logback = "1.4.7"
+    val jmxExporterJavaAgent = "0.20.0"
     val typesafeConfig = "1.4.2"
     val cats = "2.9.0"
     val log4cats = "2.6.0"
@@ -19,6 +20,7 @@ object Dependencies {
 
   val deps: Seq[ModuleID] = Seq(
     logback,
+    Seq(jmxExporterJavaAgent),
     typesafeConfig,
     cats,
     log4cats,
@@ -32,6 +34,9 @@ object Dependencies {
   lazy val logback: Seq[ModuleID] = Seq(
     "ch.qos.logback" % "logback-classic" % Versions.logback
   )
+
+  // metrics
+  lazy val jmxExporterJavaAgent: ModuleID = "io.prometheus.jmx" % "jmx_prometheus_javaagent" % Versions.jmxExporterJavaAgent
 
   // config
   lazy val typesafeConfig: Seq[ModuleID] = Seq(
