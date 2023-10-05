@@ -80,8 +80,7 @@ docker run -it --rm --env-file ./.env berner:VERSION
 
 ## メトリクスの取得
 
-jmx-exporterを導入している。  
-設定ファイルを食わせてよしなにメトリクスを取得する。  
+jmx-exporterを導入し、9090でlistenしている。  
 
 ### Ref
 

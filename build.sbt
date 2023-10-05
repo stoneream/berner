@@ -24,17 +24,33 @@ lazy val baseConfig: Project => Project =
     // scalafix settings
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
-    scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
+    ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
     // scalafmt settings
     scalafmtOnCompile := true
   )
+
+// JMX Settings
+
+lazy val jmxExporterPort = 9090
+
+// Docker用のJavaAgent設定
+lazy val dockerJavaAgentSetting = JavaAgent(
+  Dependencies.jmxExporterJavaAgent,
+  arguments = s"$jmxExporterPort:/opt/docker/conf/jmx_exporter_config.yml"
+)
+
+// ローカル実行用のJavaAgent設定 (あんまり使わない)
+lazy val defaultJavaAgentsSetting = JavaAgent(
+  Dependencies.jmxExporterJavaAgent,
+  scope = JavaAgent.AgentScope(run = true),
+  arguments = s"$jmxExporterPort:${file("src/universal/conf/jmx_exporter_config.yml").getAbsolutePath}"
+)
 
 lazy val root = (project in file("."))
   .enablePlugins(
     DockerPlugin,
     JavaAgent,
-    JavaAppPackaging,
-    UniversalPlugin
+    JavaAppPackaging
   )
   .configure(baseConfig)
   .settings(
@@ -44,5 +60,6 @@ lazy val root = (project in file("."))
     Universal / javaOptions ++= Seq("-Dpidfile.path=/dev/null"),
     dockerBaseImage := "azul/zulu-openjdk:11-latest",
     dockerUsername := Some("stoneream"),
-    javaAgents += JavaAgent(Dependencies.jmxExporterJavaAgent)
+    dockerExposedPorts := Seq(jmxExporterPort),
+    javaAgents += dockerJavaAgentSetting
   )
