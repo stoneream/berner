@@ -31,10 +31,20 @@ object HubMessageUpdateHandler {
                     text = {
                       // templating
                       val messageLink = s"https://discord.com/channels/${d.guildId}/${d.channelId}/${d.id}"
-                      s"""
-                         |$sanitizedContent
-                         |($messageLink)
-                         |""".stripMargin
+
+                      if (d.attachments.isEmpty) {
+                        s"""
+                           |$sanitizedContent
+                           |($messageLink)
+                           |""".stripMargin
+                      } else {
+                        val urls = d.attachments.map(_.url).mkString("\n")
+                        s"""
+                           |$sanitizedContent
+                           |$urls
+                           |($messageLink)
+                           |""".stripMargin
+                      }
                     }
                     _ <- DiscordWebhookClient.editMessage(hubMessage.messageId, text)(botConfig.timesHubWebhookId, botConfig.timesHubWebhookToken)
                   } yield ()

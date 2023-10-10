@@ -6,11 +6,16 @@ object MessageUpdate {
       id: String,
       channelId: String,
       content: String,
-      mentions: Seq[Mention]
+      mentions: Seq[Mention],
+      attachments: Seq[Attachment]
   )
 
   case class Mention(
       globalName: String,
       id: String
+  )
+
+  case class Attachment(
+      url: String
   )
 }

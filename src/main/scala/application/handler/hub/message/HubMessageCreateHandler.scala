@@ -62,12 +62,23 @@ object HubMessageCreateHandler {
     IO.pure(result)
   }
 
-  private def templating(text: String, data: MessageCreate.Data): IO[String] = {
-    val messageLink = s"https://discord.com/channels/${data.guildId}/${data.channelId}/${data.id}"
-    val message = s"""
-                     |$text
-                     |($messageLink)
-                     |""".stripMargin
+  private def templating(text: String, d: MessageCreate.Data): IO[String] = {
+    // templating
+    val messageLink = s"https://discord.com/channels/${d.guildId}/${d.channelId}/${d.id}"
+
+    val message = if (d.attachments.isEmpty) {
+      s"""
+         |$text
+         |($messageLink)
+         |""".stripMargin
+    } else {
+      val urls = d.attachments.map(_.url).mkString("\n")
+      s"""
+         |$text
+         |$urls
+         |($messageLink)
+         |""".stripMargin
+    }
 
     IO.pure(message)
   }

@@ -7,7 +7,8 @@ object MessageCreate {
       channelId: String,
       author: Author,
       content: String,
-      mentions: Seq[Mention]
+      mentions: Seq[Mention],
+      attachments: Seq[Attachment]
   )
 
   case class Author(
@@ -19,5 +20,9 @@ object MessageCreate {
   case class Mention(
       globalName: String,
       id: String
+  )
+
+  case class Attachment(
+      url: String
   )
 }
