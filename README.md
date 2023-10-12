@@ -4,7 +4,8 @@
 
 ## About
 
-http4sでdiscordのbotを書いてる
+http4sでdiscordのbotを書いてる  
+闇鍋みたいになってる
 
 ## マイグレーションについて
 
