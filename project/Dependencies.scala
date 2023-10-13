@@ -21,7 +21,8 @@ object Dependencies {
   val deps: Seq[ModuleID] = Seq(
     logback,
     Seq(jmxExporterJavaAgent),
-    typesafeConfig,
+    Seq(typesafeConfig),
+    Seq(scopt),
     cats,
     log4cats,
     http4s,
@@ -39,9 +40,10 @@ object Dependencies {
   lazy val jmxExporterJavaAgent: ModuleID = "io.prometheus.jmx" % "jmx_prometheus_javaagent" % Versions.jmxExporterJavaAgent
 
   // config
-  lazy val typesafeConfig: Seq[ModuleID] = Seq(
-    "com.typesafe" % "config" % Versions.typesafeConfig
-  )
+  lazy val typesafeConfig: ModuleID = "com.typesafe" % "config" % Versions.typesafeConfig
+
+  // cli option parser
+  lazy val scopt: ModuleID = "com.github.scopt" %% "scopt" % "4.1.0"
 
   // cats
   lazy val cats: Seq[ModuleID] = catsCore ++ log4cats ++ catsEffect ++ catsMTL
