@@ -10,6 +10,7 @@ object ExchangeRateHandler {
   def handle(appId: String): IO[Unit] = {
     import org.http4s.circe.CirceEntityCodec.circeEntityDecoder
 
+    // https://docs.openexchangerates.org/reference/api-introduction
     val endpoint = "https://openexchangerates.org/api/latest.json"
     val request = Request[IO](
       method = Method.POST,
