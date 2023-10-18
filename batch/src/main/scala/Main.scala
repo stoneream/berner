@@ -1,6 +1,7 @@
 import cats.effect.{ExitCode, IO, IOApp}
 import scopt.OParser
-import Config.Command
+import Argument.Command
+import application.handler.exchange_rate.ExchangeRateHandler
 import org.typelevel.log4cats.LoggerFactory
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 
@@ -11,14 +12,16 @@ object Main extends IOApp {
     val logger = LoggerFactory.getLogger
 
     for {
-      config <- parseArgs(args)
-      _ <- logger.info(s"[$config]")
+      arguments <- parseArgs(args)
+      config <- Configuration.load
+      _ <- logger.info(s"[arguments=$arguments]")
+      _ <- runCommand(arguments, config)
     } yield ExitCode.Success
   }
 
-  private def parseArgs(args: List[String]): IO[Config] = {
+  private def parseArgs(args: List[String]): IO[Argument] = {
     val parser = {
-      val builder = OParser.builder[Config]
+      val builder = OParser.builder[Argument]
       import builder._
       OParser.sequence(
         head("batch", "0.1.0"),
@@ -27,9 +30,15 @@ object Main extends IOApp {
       )
     }
 
-    OParser.parse(parser, args, Config()) match {
+    OParser.parse(parser, args, Argument()) match {
       case Some(config) => IO.pure(config)
       case None => IO.raiseError(new IllegalArgumentException("invalid arguments"))
+    }
+  }
+
+  private def runCommand(arguments: Argument, config: Configuration): IO[Unit] = {
+    arguments.command match {
+      case Command.ExchangeRate => ExchangeRateHandler.handle(config.openExchangeRatesAppId)
     }
   }
 }

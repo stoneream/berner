@@ -62,6 +62,7 @@ lazy val bot = (project in file("bot"))
   .settings(dockerPluginConfig)
   .settings(
     name := "berner-bot",
+    Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
     libraryDependencies ++= Dependencies.deps, // todo 依存関係を整理する
     Universal / javaOptions ++= Seq("-Dpidfile.path=/dev/null")
   )
@@ -72,6 +73,7 @@ lazy val batch = (project in file("batch"))
   .settings(dockerPluginConfig)
   .settings(
     name := "berner-batch",
+    Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
     libraryDependencies ++= Dependencies.deps, // todo 依存関係を整理する
     Universal / javaOptions ++= Seq("-Dpidfile.path=/dev/null")
   )

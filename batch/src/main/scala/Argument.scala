@@ -1,8 +1,8 @@
-case class Config(
+case class Argument(
     command: String = ""
 )
 
-object Config {
+object Argument {
   object Command {
     final val ExchangeRate = "exchange-rate"
   }
