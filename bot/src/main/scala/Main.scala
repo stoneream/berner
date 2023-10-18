@@ -1,16 +1,16 @@
-import application.ApplicationContext
-import application.handler.DoNothingHandler
-import application.handler.gateway.GatewayReadyHandler
-import application.handler.hub.HubContext
-import application.handler.hub.guild.HubGuildCreateHandler
-import application.handler.hub.message.{HubMessageCreateHandler, HubMessageDeleteHandler, HubMessageUpdateHandler}
-import application.handler.hub.thread.{HubThreadCreateHandler, HubThreadDeleteHandler}
-import application.handler.ping.PingHandler
+import berner.bot.database.Database
+import berner.bot.handler.DoNothingHandler
+import berner.bot.handler.gateway.GatewayReadyHandler
+import berner.bot.handler.hub.HubContext
+import berner.bot.handler.hub.guild.HubGuildCreateHandler
+import berner.bot.handler.hub.message.{HubMessageCreateHandler, HubMessageDeleteHandler, HubMessageUpdateHandler}
+import berner.bot.handler.hub.thread.{HubThreadCreateHandler, HubThreadDeleteHandler}
+import berner.bot.handler.ping.PingHandler
+import berner.bot.model.ApplicationContext
+import berner.bot.service.HubMessageService
 import cats.effect._
 import cats.effect.std.{AtomicCell, Queue}
 import cats.implicits.catsSyntaxParallelSequence1
-import database.Database
-import database.service.HubMessageService
 import discord.payload.Payload
 import discord.payload.Payload.DiscordEvent
 import discord.{BotContext, DiscordConfig, GatewayClient}

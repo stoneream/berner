@@ -54,12 +54,20 @@ lazy val dockerPluginConfig = Seq(
 
 lazy val root = (project in file("."))
   .settings(baseSettings)
-  .aggregate(bot, batch)
+  .aggregate(core, bot, batch)
+
+lazy val core = (project in file("core"))
+  .settings(baseSettings)
+  .settings(
+    name := "berner-core",
+    libraryDependencies ++= Dependencies.deps // todo 依存関係を整理する
+  )
 
 lazy val bot = (project in file("bot"))
   .enablePlugins(DockerPlugin, JavaAgent, JavaAppPackaging)
   .settings(baseSettings)
   .settings(dockerPluginConfig)
+  .dependsOn(core)
   .settings(
     name := "berner-bot",
     Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
@@ -71,6 +79,7 @@ lazy val batch = (project in file("batch"))
   .enablePlugins(DockerPlugin, JavaAgent, JavaAppPackaging)
   .settings(baseSettings)
   .settings(dockerPluginConfig)
+  .dependsOn(core)
   .settings(
     name := "berner-batch",
     Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
