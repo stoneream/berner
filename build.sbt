@@ -53,7 +53,6 @@ lazy val dockerPluginConfig = Seq(
 )
 
 lazy val root = (project in file("."))
-  .enablePlugins(DockerPlugin, JavaAgent, JavaAppPackaging)
   .settings(baseSettings)
   .aggregate(bot, batch)
 
