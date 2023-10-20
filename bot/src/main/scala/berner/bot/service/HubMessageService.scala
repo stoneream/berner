@@ -1,6 +1,6 @@
 package berner.bot.service
 
-import berner.bot.model.HubMessage
+import berner.core.model.HubMessage
 import cats.effect.Sync
 import doobie.util.transactor.Transactor
 import doobie.implicits._

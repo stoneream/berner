@@ -1,4 +1,4 @@
-package berner.bot.model
+package berner.core.model
 
 import java.time.LocalDateTime
 

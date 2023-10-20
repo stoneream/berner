@@ -1,9 +1,10 @@
 package berner.bot.handler.hub.message
 
 import berner.bot.handler.hub.HubContext
-import berner.bot.model.{ApplicationContext, HubMessage}
+import berner.bot.model.ApplicationContext
 import berner.bot.service.HubMessageService
 import berner.core.discord.DiscordWebhookClient
+import berner.core.model.HubMessage
 import cats.data.ReaderT
 import cats.effect.IO
 import discord.payload.MessageCreate
