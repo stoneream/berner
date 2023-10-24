@@ -4,7 +4,7 @@ create table exchange_rates(
   id serial primary key,
   base_currency varchar(255) not null,
   target_currency varchar(255) not null,
-  rate numeric(10, 6) not null,
+  rate numeric(10, 4) not null,
   target_date datetime not null,
   created_at datetime not null,
   updated_at datetime not null,

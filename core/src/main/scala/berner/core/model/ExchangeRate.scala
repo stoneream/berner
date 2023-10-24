@@ -3,7 +3,7 @@ package berner.core.model
 import java.time.LocalDateTime
 
 case class ExchangeRate(
-    id: Option[Long],
+    id: Long,
     baseCurrency: String,
     targetCurrency: String,
     rate: BigDecimal,
