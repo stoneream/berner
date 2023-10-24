@@ -27,11 +27,13 @@ object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     val logger = LoggerFactory.getLogger
 
+    // todo 直す
+
     (for {
       config <- IO(ConfigFactory.load())
       databaseConfig = DatabaseConfig.fromConfig(config)
-      ec <- ExecutionContexts.fixedThreadPool[IO](databaseConfig.poolMaxSize).use(IO.pure)
-      transactor <- Database.apply(databaseConfig, ec).use(IO.pure)
+      ec <- ExecutionContexts.fixedThreadPool[IO](databaseConfig.poolMaxSize)
+      transactor <- Database.apply(databaseConfig, ec)
       discordConfig = DiscordConfig.fromConfig(config)
       applicationContext <- AtomicCell[IO].of(
         ApplicationContext(
