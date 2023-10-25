@@ -47,7 +47,12 @@ object Main extends IOApp {
       _ <- ExecutionContexts.fixedThreadPool[IO](databaseConfig.poolMaxSize).use { ec =>
         Database.apply(databaseConfig, ec).use { transactor =>
           arguments.command match {
-            case Command.ExchangeRate => ExchangeRateHandler.handle(config.openExchangeRatesAppId)(transactor)
+            case Command.ExchangeRate =>
+              ExchangeRateHandler.handle(
+                config.openExchangeRatesAppId,
+                config.discordBotTimesWebhookId,
+                config.discordBotTimesWebhookToken
+              )(transactor)
           }
         }
       }

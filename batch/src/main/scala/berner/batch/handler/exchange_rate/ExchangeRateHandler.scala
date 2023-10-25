@@ -1,5 +1,6 @@
 package berner.batch.handler.exchange_rate
 
+import berner.core.discord.DiscordWebhookClient
 import berner.core.model.ExchangeRate
 import berner.core.open_exchange_rates.OpenExchangeRatesClient
 import berner.core.open_exchange_rates.payload.{AppId, Latest}
@@ -8,16 +9,20 @@ import cats.implicits._
 import cats.effect._
 import doobie.util.transactor.Transactor
 
+import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDateTime, ZoneOffset}
+import java.util.Locale
 
 object ExchangeRateHandler {
 
-  def handle(appId: String): ReaderT[IO, Transactor[IO], Unit] = ReaderT { transactor =>
+  def handle(appId: String, webhookId: String, webHookToken: String): ReaderT[IO, Transactor[IO], Unit] = ReaderT { transactor =>
     for {
       appId <- IO.pure(AppId(appId))
       response <- OpenExchangeRatesClient.latest()(appId)
       exchangeRates = convert(response)
       _ <- write(exchangeRates).run(transactor)
+      message = makeMessage(response)
+      _ <- DiscordWebhookClient.execute(message, "為替レート", None)(webhookId, webHookToken).void
     } yield ()
   }
 
@@ -38,6 +43,22 @@ object ExchangeRateHandler {
         deletedAt = None
       )
     }.toList
+  }
+
+  private def makeMessage(latest: Latest): String = {
+    val rates = latest.rates
+    val instant = Instant.ofEpochSecond(latest.timestamp)
+    val targetDate = LocalDateTime.ofInstant(instant, ZoneOffset.UTC).atOffset(ZoneOffset.UTC)
+    val formattedDate = targetDate.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+
+    (for {
+      jpy <- rates.get("JPY")
+    } yield {
+      s"""USD/JPY ${jpy}
+         |
+         |($formattedDate)
+         |""".stripMargin
+    }).getOrElse("為替レートの取得に失敗")
   }
 
   private def write(ers: List[ExchangeRate]): ReaderT[IO, Transactor[IO], Int] = ReaderT { transactor =>
