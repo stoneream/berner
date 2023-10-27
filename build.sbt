@@ -47,7 +47,10 @@ lazy val defaultJavaAgentsSetting = JavaAgent(
 // DockerPluginの設定
 lazy val dockerPluginConfig = Seq(
   dockerBaseImage := "azul/zulu-openjdk:11-latest",
-  dockerUsername := Some("stoneream"),
+  dockerUsername := Some("stoneream")
+)
+
+lazy val jmxExporterConfig = Seq(
   dockerExposedPorts := Seq(jmxExporterPort),
   javaAgents += dockerJavaAgentSetting
 )
@@ -67,6 +70,7 @@ lazy val bot = (project in file("bot"))
   .enablePlugins(DockerPlugin, JavaAgent, JavaAppPackaging)
   .settings(baseSettings)
   .settings(dockerPluginConfig)
+  .settings(jmxExporterConfig)
   .dependsOn(core)
   .settings(
     name := "berner-bot",
