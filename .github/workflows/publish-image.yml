@@ -28,4 +28,4 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Build and push
-        run: sbt docker:publish
+        run: sbt bot/docker:publish batch/docker:publish
