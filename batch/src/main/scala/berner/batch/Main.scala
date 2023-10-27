@@ -3,8 +3,9 @@ package berner.batch
 import berner.batch.Argument.Command
 import berner.batch.handler.exchange_rate.ExchangeRateHandler
 import berner.core.database.{Database, DatabaseConfig}
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.typesafe.config.ConfigFactory
+import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import org.typelevel.log4cats.LoggerFactory
 import org.typelevel.log4cats.slf4j.Slf4jFactory
@@ -42,18 +43,18 @@ object Main extends IOApp {
   }
 
   private def runCommand(arguments: Argument, config: Configuration): IO[Unit] = {
+    def loadConfig: IO[DatabaseConfig] = IO(ConfigFactory.load()).map(DatabaseConfig.fromConfig)
+    def setupDB(databaseConfig: DatabaseConfig): Resource[IO, HikariTransactor[IO]] = {
+      ExecutionContexts.fixedThreadPool[IO](databaseConfig.poolMaxSize).flatMap { ec =>
+        Database.apply(databaseConfig, ec)
+      }
+    }
+
     for {
-      databaseConfig <- IO(ConfigFactory.load()).map(DatabaseConfig.fromConfig)
-      _ <- ExecutionContexts.fixedThreadPool[IO](databaseConfig.poolMaxSize).use { ec =>
-        Database.apply(databaseConfig, ec).use { transactor =>
-          arguments.command match {
-            case Command.ExchangeRate =>
-              ExchangeRateHandler.handle(
-                config.openExchangeRatesAppId,
-                config.discordBotTimesWebhookId,
-                config.discordBotTimesWebhookToken
-              )(transactor)
-          }
+      databaseConfig <- loadConfig
+      _ <- setupDB(databaseConfig).use { transactor =>
+        arguments.command match {
+          case Command.ExchangeRate => ExchangeRateHandler.handle()(config, transactor)
         }
       }
     } yield ()

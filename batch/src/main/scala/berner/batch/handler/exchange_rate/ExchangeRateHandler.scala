@@ -1,35 +1,35 @@
 package berner.batch.handler.exchange_rate
 
+import berner.batch.Configuration
+import berner.core.database.writer.ExchangeRateWriter
 import berner.core.discord.DiscordWebhookClient
 import berner.core.model.ExchangeRate
 import berner.core.open_exchange_rates.OpenExchangeRatesClient
 import berner.core.open_exchange_rates.payload.{AppId, Latest}
 import cats.data.ReaderT
-import cats.implicits._
 import cats.effect._
 import doobie.util.transactor.Transactor
 
 import java.time.format.DateTimeFormatter
-import java.time.{Instant, LocalDateTime, ZoneOffset}
-import java.util.Locale
+import java.time.{Instant, LocalDateTime, OffsetDateTime, ZoneOffset}
 
 object ExchangeRateHandler {
 
-  def handle(appId: String, webhookId: String, webHookToken: String): ReaderT[IO, Transactor[IO], Unit] = ReaderT { transactor =>
+  def handle(): ReaderT[IO, (Configuration, Transactor[IO]), Unit] = ReaderT { case (configuration, transactor) =>
     for {
-      appId <- IO.pure(AppId(appId))
+      appId <- IO.pure(AppId(configuration.openExchangeRatesAppId))
       response <- OpenExchangeRatesClient.latest()(appId)
       exchangeRates = convert(response)
-      _ <- write(exchangeRates).run(transactor)
+      _ <- ExchangeRateWriter.write(exchangeRates).run(transactor)
       message = makeMessage(response)
-      _ <- DiscordWebhookClient.execute(message, "為替レート", None)(webhookId, webHookToken).void
+      _ <- DiscordWebhookClient.execute(message, "為替レート", None)(configuration.discordBotTimesWebhookId, configuration.discordBotTimesWebhookToken).void
     } yield ()
   }
 
   private def convert(latest: Latest): List[ExchangeRate] = {
-    val now = LocalDateTime.now
+    val now = OffsetDateTime.now
     val instant = Instant.ofEpochSecond(latest.timestamp)
-    val targetDate = LocalDateTime.ofInstant(instant, ZoneOffset.UTC)
+    val targetDate = OffsetDateTime.ofInstant(instant, ZoneOffset.UTC)
 
     latest.rates.map { case (currency, rate) =>
       ExchangeRate(
@@ -59,33 +59,6 @@ object ExchangeRateHandler {
          |($formattedDate)
          |""".stripMargin
     }).getOrElse("為替レートの取得に失敗")
-  }
-
-  private def write(ers: List[ExchangeRate]): ReaderT[IO, Transactor[IO], Int] = ReaderT { transactor =>
-    import doobie._
-    import doobie.implicits._
-    import doobie.implicits.javatimedrivernative._
-
-    val query =
-      """
-        |INSERT INTO exchange_rates (
-        |base_currency,
-        |target_currency,
-        |rate,
-        |target_date,
-        |created_at,
-        |updated_at,
-        |deleted_at
-        |) VALUES (?, ?, ?, ?, ?, ?, ?)
-        |""".stripMargin
-
-    type InsertExchangeRate = (String, String, BigDecimal, LocalDateTime, LocalDateTime, LocalDateTime, Option[LocalDateTime])
-
-    val rows = ers.map { er =>
-      (er.baseCurrency, er.targetCurrency, er.rate, er.targetDate, er.createdAt, er.updatedAt, er.deletedAt)
-    }
-
-    Update[InsertExchangeRate](query).updateMany(rows).transact(transactor)
   }
 
 }

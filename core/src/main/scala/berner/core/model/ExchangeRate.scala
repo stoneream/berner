@@ -1,14 +1,14 @@
 package berner.core.model
 
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 case class ExchangeRate(
     id: Long,
     baseCurrency: String,
     targetCurrency: String,
     rate: BigDecimal,
-    targetDate: LocalDateTime,
-    createdAt: LocalDateTime,
-    updatedAt: LocalDateTime,
-    deletedAt: Option[LocalDateTime]
+    targetDate: OffsetDateTime,
+    createdAt: OffsetDateTime,
+    updatedAt: OffsetDateTime,
+    deletedAt: Option[OffsetDateTime]
 )

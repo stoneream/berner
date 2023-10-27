@@ -8,6 +8,7 @@ import doobie.implicits.javatimedrivernative._
 
 import java.time.LocalDateTime
 
+// todo ExchangeRateWriterみたいに切り出して～～
 class HubMessageService[F[_]: Sync](transactor: Transactor[F]) {
 
   def find(sourceMessageId: String, sourceChannelId: String, guildId: String): F[Option[HubMessage]] = {
