@@ -36,7 +36,8 @@ object Dependencies {
   // NOTE: 2.0.0.0-M1 はJarが配布されていない
   //       各環境でpublishLocalを実行すること
   lazy val ackcord: Seq[ModuleID] = Seq(
-    "net.katsstuff" %% "ackcord" % Versions.ackcord
+    "net.katsstuff" %% "ackcord" % Versions.ackcord,
+    "net.katsstuff" %% "ackcord-interactions" % Versions.ackcord
   )
 
   // logging
