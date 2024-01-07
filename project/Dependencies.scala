@@ -15,6 +15,7 @@ object Dependencies {
     val http4sJDKHttpClient = "0.9.1"
     val mariadbJavaClient = "3.1.4"
     val doobie = "1.0.0-RC4"
+    val ackcord = "2.0.0.0-M1"
     val scalatest = "3.2.15"
   }
 
@@ -30,6 +31,13 @@ object Dependencies {
     db,
     test
   ).flatten
+
+  // ackcord
+  // NOTE: 2.0.0.0-M1 はJarが配布されていない
+  //       各環境でpublishLocalを実行すること
+  lazy val ackcord: Seq[ModuleID] = Seq(
+    "net.katsstuff" %% "ackcord" % Versions.ackcord
+  )
 
   // logging
   lazy val logback: Seq[ModuleID] = Seq(

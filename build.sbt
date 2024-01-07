@@ -57,36 +57,48 @@ lazy val jmxExporterConfig = Seq(
 
 lazy val root = (project in file("."))
   .settings(baseSettings)
-  .aggregate(core, bot, batch)
+//  .aggregate(core, bot, batch)
 
-lazy val core = (project in file("core"))
-  .settings(baseSettings)
-  .settings(
-    name := "berner-core",
-    libraryDependencies ++= Dependencies.deps // todo 依存関係を整理する
-  )
-
-lazy val bot = (project in file("bot"))
+lazy val botV2 = (project in file("bot-v2"))
   .enablePlugins(DockerPlugin, JavaAgent, JavaAppPackaging)
   .settings(baseSettings)
   .settings(dockerPluginConfig)
   .settings(jmxExporterConfig)
-  .dependsOn(core)
   .settings(
-    name := "berner-bot",
+    name := "berner-bot-v2",
     Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
-    libraryDependencies ++= Dependencies.deps, // todo 依存関係を整理する
+    libraryDependencies ++= Dependencies.ackcord,
     Universal / javaOptions ++= Seq("-Dpidfile.path=/dev/null")
   )
 
-lazy val batch = (project in file("batch"))
-  .enablePlugins(DockerPlugin, JavaAgent, JavaAppPackaging)
-  .settings(baseSettings)
-  .settings(dockerPluginConfig)
-  .dependsOn(core)
-  .settings(
-    name := "berner-batch",
-    Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
-    libraryDependencies ++= Dependencies.deps, // todo 依存関係を整理する
-    Universal / javaOptions ++= Seq("-Dpidfile.path=/dev/null")
-  )
+//lazy val core = (project in file("core"))
+//  .settings(baseSettings)
+//  .settings(
+//    name := "berner-core",
+//    libraryDependencies ++= Dependencies.deps // todo 依存関係を整理する
+//  )
+//
+//lazy val bot = (project in file("bot"))
+//  .enablePlugins(DockerPlugin, JavaAgent, JavaAppPackaging)
+//  .settings(baseSettings)
+//  .settings(dockerPluginConfig)
+//  .settings(jmxExporterConfig)
+//  .dependsOn(core)
+//  .settings(
+//    name := "berner-bot",
+//    Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
+//    libraryDependencies ++= Dependencies.deps, // todo 依存関係を整理する
+//    Universal / javaOptions ++= Seq("-Dpidfile.path=/dev/null")
+//  )
+//
+//lazy val batch = (project in file("batch"))
+//  .enablePlugins(DockerPlugin, JavaAgent, JavaAppPackaging)
+//  .settings(baseSettings)
+//  .settings(dockerPluginConfig)
+//  .dependsOn(core)
+//  .settings(
+//    name := "berner-batch",
+//    Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
+//    libraryDependencies ++= Dependencies.deps, // todo 依存関係を整理する
+//    Universal / javaOptions ++= Seq("-Dpidfile.path=/dev/null")
+//  )
