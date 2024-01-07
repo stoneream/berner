@@ -1,0 +1,3 @@
+[submodule "AckCord"]
+	path = AckCord
+	url = git@github.com:Katrix/AckCord.git
