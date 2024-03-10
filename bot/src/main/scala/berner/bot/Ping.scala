@@ -8,7 +8,9 @@ class Ping extends ListenerAdapter {
     if (event.getAuthor.isBot || event.isWebhookMessage) {
       // do nothing
     } else {
-      event.getChannel.sendMessage("pong!").queue()
+      if (event.getMessage.getContentRaw == "ping") {
+        event.getChannel.sendMessage("pong!").queue()
+      }
     }
   }
 }
