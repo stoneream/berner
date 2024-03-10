@@ -12,17 +12,21 @@ object Dependencies {
     val catsMTL = "1.3.1"
     val circe = "0.14.1"
     val http4s = "0.23.21"
+    val sttp = "3.9.4"
     val http4sJDKHttpClient = "0.9.1"
     val mariadbJavaClient = "3.1.4"
+    val scalikejdbc = "4.2.1"
     val doobie = "1.0.0-RC4"
+    val jda = "5.0.0-beta.20"
+    val discordWebhooks = "0.8.4"
     val scalatest = "3.2.15"
   }
 
   val deps: Seq[ModuleID] = Seq(
     logback,
     Seq(jmxExporterJavaAgent),
-    Seq(typesafeConfig),
-    Seq(scopt),
+    typesafeConfig,
+    scopt,
     cats,
     log4cats,
     http4s,
@@ -31,19 +35,34 @@ object Dependencies {
     test
   ).flatten
 
+  lazy val bot: Seq[sbt.ModuleID] = Seq(
+    jda,
+    logback,
+    scalikejdbc,
+    mariadb,
+    typesafeConfig,
+    circe
+  ).flatten
+
   // logging
   lazy val logback: Seq[ModuleID] = Seq(
     "ch.qos.logback" % "logback-classic" % Versions.logback
   )
 
   // metrics
-  lazy val jmxExporterJavaAgent: ModuleID = "io.prometheus.jmx" % "jmx_prometheus_javaagent" % Versions.jmxExporterJavaAgent
+  lazy val jmxExporterJavaAgent =
+    "io.prometheus.jmx" % "jmx_prometheus_javaagent" % Versions.jmxExporterJavaAgent
+
 
   // config
-  lazy val typesafeConfig: ModuleID = "com.typesafe" % "config" % Versions.typesafeConfig
+  lazy val typesafeConfig: Seq[ModuleID] = Seq(
+    "com.typesafe" % "config" % Versions.typesafeConfig
+  )
 
   // cli option parser
-  lazy val scopt: ModuleID = "com.github.scopt" %% "scopt" % "4.1.0"
+  lazy val scopt: Seq[ModuleID] = Seq(
+    "com.github.scopt" %% "scopt" % "4.1.0"
+  )
 
   // cats
   lazy val cats: Seq[ModuleID] = catsCore ++ log4cats ++ catsEffect ++ catsMTL
@@ -80,6 +99,11 @@ object Dependencies {
     "io.circe" %% "circe-generic-extras" % Versions.circe
   )
 
+  lazy val sttp: Seq[ModuleID] = Seq(
+    "com.softwaremill.sttp.client3" %% "core" % Versions.sttp,
+    "com.softwaremill.sttp.client3" %% "circe" % Versions.sttp
+  )
+
   // database
   lazy val db: Seq[ModuleID] = mariadb ++ doobie
 
@@ -87,9 +111,20 @@ object Dependencies {
     "org.mariadb.jdbc" % "mariadb-java-client" % Versions.mariadbJavaClient
   )
 
+  lazy val scalikejdbc: Seq[ModuleID] = Seq(
+    "org.scalikejdbc" %% "scalikejdbc" % Versions.scalikejdbc,
+    "org.scalikejdbc" %% "scalikejdbc-config" % Versions.scalikejdbc
+  )
+
   lazy val doobie: Seq[ModuleID] = Seq(
     "org.tpolecat" %% "doobie-core" % Versions.doobie,
     "org.tpolecat" %% "doobie-hikari" % Versions.doobie
+  )
+
+  // discord
+  lazy val jda: Seq[ModuleID] = Seq(
+    "net.dv8tion" % "JDA" % Versions.jda,
+    "club.minnced" % "discord-webhooks" % Versions.discordWebhooks
   )
 
   // test

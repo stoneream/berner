@@ -5,7 +5,6 @@
 ## TODO
 
 - 次の説明を記述する
-  - webhookの設定方法
   - 追加した環境変数
   - 追加した新機能
   - dockerイメージの起動方法が変わった件
@@ -43,12 +42,6 @@ $ flyway -configFiles="flyway.sample.conf" migrate
 
 ## Discordの設定
 
-- `hub-times`には`times-`で始まるチャンネルのメッセージが転送される
-  - 前提条件は以下
-  - `hub-times`チャンネルの作成
-  - `hub-times`チャンネルにwebhookを設定
-  - アプリケーションにwebhookのidとtokenを設定
-
 ### Botの権限周りの設定
 
 ![memo1](./memo1.png)
@@ -77,16 +70,14 @@ docker run -it --rm --env-file ./.env berner:VERSION
 
 ## 環境変数
 
-| 変数名                                    | 説明                             | 補足                                                          |
-|----------------------------------------|--------------------------------|-------------------------------------------------------------|
-| BERNER_DISCORD_TOKEN                   | DiscordのBotのトークン               | Developer Portal から取得                                       |
-| BERNER_DISCORD_TIMES_HUB_WEBHOOK_ID    | `hub-times`チャンネルのwebhookのid    | https://discord.com/api/webhooks/[WEBHOOK_ID]/WEBHOOK_TOKEN |
-| BERNER_DISCORD_TIMES_HUB_WEBHOOK_TOKEN | `hub-times`チャンネルのwebhookのtoken | https://discord.com/api/webhooks/WEBHOOK_ID/[WEBHOOK_TOKEN] |
-| BERNER_DATABASE_PRIMARY_HOST           | データベースのホスト                     |                                                             |
-| BERNER_DATABASE_PRIMARY_PORT           | データベースのポート                     |                                                             |
-| BERNER_DATABASE_PRIMARY_NAME           | データベースの名前                      |                                                             |
-| BERNER_DATABASE_PRIMARY_USER           | データベースのユーザー名                   |                                                             |
-| BERNER_DATABASE_PRIMARY_PASSWORD       | データベースのパスワード                   |                                                             |
+| 変数名                     | 説明                     | 補足                      |
+| -------------------------- | ------------------------ | ------------------------- |
+| BERNER_DISCORD_TOKEN       | DiscordのBotのトークン   | Developer Portal から取得 |
+| BERNER_DB_DEFAULT_HOST     | データベースのホスト     |                           |
+| BERNER_DB_DEFAULT_PORT     | データベースのポート     |                           |
+| BERNER_DB_DEFAULT_NAME     | データベースの名前       |                           |
+| BERNER_DB_DEFAULT_USER     | データベースのユーザー名 |                           |
+| BERNER_DB_DEFAULT_PASSWORD | データベースのパスワード |                           |
 
 ## メトリクスの取得
 

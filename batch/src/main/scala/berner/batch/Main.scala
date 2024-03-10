@@ -2,7 +2,7 @@ package berner.batch
 
 import berner.batch.Argument.Command
 import berner.batch.handler.exchange_rate.ExchangeRateHandler
-import berner.core.database.{Database, DatabaseConfig}
+import berner.database.{Database, DatabaseConfig}
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.typesafe.config.ConfigFactory
 import doobie.hikari.HikariTransactor

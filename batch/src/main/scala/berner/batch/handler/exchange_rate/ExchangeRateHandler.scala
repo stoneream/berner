@@ -1,11 +1,11 @@
 package berner.batch.handler.exchange_rate
 
 import berner.batch.Configuration
-import berner.core.database.writer.ExchangeRateWriter
-import berner.core.discord.DiscordWebhookClient
-import berner.core.model.ExchangeRate
-import berner.core.open_exchange_rates.OpenExchangeRatesClient
-import berner.core.open_exchange_rates.payload.{AppId, Latest}
+import berner.database.writer.ExchangeRateWriter
+import berner.discord.DiscordWebhookClient
+import berner.model.ExchangeRate
+import berner.open_exchange_rates.OpenExchangeRatesClient
+import berner.open_exchange_rates.payload.{AppId, Latest}
 import cats.data.ReaderT
 import cats.effect._
 import doobie.util.transactor.Transactor
@@ -22,7 +22,7 @@ object ExchangeRateHandler {
       exchangeRates = convert(response)
       _ <- ExchangeRateWriter.write(exchangeRates).run(transactor)
       message = makeMessage(response)
-      _ <- DiscordWebhookClient.execute(message, "為替レート", None)(configuration.discordBotTimesWebhookId, configuration.discordBotTimesWebhookToken).void
+      _ <- DiscordWebhookClient.execute(message, "為替レート", None)(configuration.discordBotWebhookId, configuration.discordBotWebhookToken).void
     } yield ()
   }
 

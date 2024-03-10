@@ -5,8 +5,8 @@ import com.typesafe.config.ConfigFactory
 
 case class Configuration(
     openExchangeRatesAppId: String,
-    discordBotTimesWebhookId: String,
-    discordBotTimesWebhookToken: String
+    discordBotWebhookId: String,
+    discordBotWebhookToken: String
 )
 
 object Configuration {
@@ -16,8 +16,8 @@ object Configuration {
     } yield {
       Configuration(
         openExchangeRatesAppId = config.getString("openExchangeRates.appId"),
-        discordBotTimesWebhookId = config.getString("discord.bot.times.webhook.id"),
-        discordBotTimesWebhookToken = config.getString("discord.bot.times.webhook.token")
+        discordBotWebhookId = config.getString("discord.bot.webhook.id"),
+        discordBotWebhookToken = config.getString("discord.bot.webhook.token")
       )
     }
   }
