@@ -17,6 +17,7 @@ object Main extends App {
       .createDefault(discordBotToken)
       .enableIntents(GatewayIntent.MESSAGE_CONTENT)
       .enableIntents(GatewayIntent.GUILD_WEBHOOKS)
+      .enableIntents(GatewayIntent.GUILD_MESSAGES)
       .addEventListeners(new Hub)
       .addEventListeners(new Ping)
       .build()

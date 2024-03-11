@@ -7,9 +7,11 @@ import club.minnced.discord.webhook.send.WebhookMessageBuilder
 import net.dv8tion.jda.api.entities.Mentions
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel
+import net.dv8tion.jda.api.entities.channel.unions.{ChannelUnion, MessageChannelUnion}
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent
 import net.dv8tion.jda.api.events.message.{GenericMessageEvent, MessageDeleteEvent, MessageReceivedEvent, MessageUpdateEvent}
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import net.dv8tion.jda.internal.entities.channel.mixin.ChannelMixin
 import scalikejdbc.DB
 
 import java.time.OffsetDateTime
@@ -239,6 +241,49 @@ class Hub extends ListenerAdapter {
   }
 
   override def onChannelDelete(event: ChannelDeleteEvent): Unit = {
-    // TODO チャンネル・スレッドが削除された場合の挙動
+    val sourceGuild = event.getGuild
+    val (guildMessageChannel, threadChannelOpt) = {
+      val eventSourceChannel = event.getChannel
+      allCatch.opt(eventSourceChannel.asThreadChannel()) match {
+        case Some(threadChannel) =>
+          // スレッドの場合は親チャンネルを解決
+          val parentTextChannel = threadChannel.getParentMessageChannel.asStandardGuildMessageChannel()
+          (parentTextChannel, Some(threadChannel))
+        case None =>
+          (eventSourceChannel.asGuildMessageChannel(), None)
+      }
+    }
+
+    for {
+      category <- extractCategoryName(guildMessageChannel.getName)
+      hubMessageMappings = threadChannelOpt.fold {
+        // チャンネルを消した場合は直下のスレッドも対象
+        DB.readOnly { session =>
+          HubMessageMappingReader.find(
+            sourceGuildMessageChannelId = guildMessageChannel.getId,
+            guildId = sourceGuild.getId
+          )(session)
+        }
+      } { threadChannel =>
+        // スレッドを消した場合はスレッドのみ
+        DB.readOnly { session =>
+          HubMessageMappingReader.find(
+            sourceGuildMessageChannelId = guildMessageChannel.getId,
+            sourceThreadMessageChannelId = threadChannel.getId,
+            guildId = sourceGuild.getId
+          )(session)
+        }
+      }
+      hubChannel <- sourceGuild.getTextChannelsByName(s"hub-$category", true).asScala.headOption
+    } yield {
+      hubMessageMappings.foreach { hmm =>
+        val id = hmm.hubMessageId
+
+        hubChannel.deleteMessageById(id).complete()
+
+        val now = OffsetDateTime.now()
+        DB localTx { session => HubMessageMappingWriter.delete(hmm.id, now)(session) }
+      }
+    }
   }
 }
