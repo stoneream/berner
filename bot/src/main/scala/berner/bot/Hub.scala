@@ -6,12 +6,10 @@ import club.minnced.discord.webhook.external.JDAWebhookClient
 import club.minnced.discord.webhook.send.WebhookMessageBuilder
 import net.dv8tion.jda.api.entities.Mentions
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
-import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel
-import net.dv8tion.jda.api.entities.channel.unions.{ChannelUnion, MessageChannelUnion}
+import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent
 import net.dv8tion.jda.api.events.message.{GenericMessageEvent, MessageDeleteEvent, MessageReceivedEvent, MessageUpdateEvent}
-import net.dv8tion.jda.api.hooks.ListenerAdapter
-import net.dv8tion.jda.internal.entities.channel.mixin.ChannelMixin
+import net.dv8tion.jda.api.hooks.ListenerAdapter
 import scalikejdbc.DB
 
 import java.time.OffsetDateTime
