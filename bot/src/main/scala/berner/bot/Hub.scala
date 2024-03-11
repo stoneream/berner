@@ -1,12 +1,13 @@
 package berner.bot
 
-import berner.database.{HubMessageReader, HubMessageWriter}
-import berner.model.hub.HubMessage
+import berner.database.{HubMessageMappingReader, HubMessageMappingWriter}
+import berner.model.hub.HubMessageMapping
 import club.minnced.discord.webhook.external.JDAWebhookClient
 import club.minnced.discord.webhook.send.WebhookMessageBuilder
 import net.dv8tion.jda.api.entities.Mentions
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel
+import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent
 import net.dv8tion.jda.api.events.message.{GenericMessageEvent, MessageDeleteEvent, MessageReceivedEvent, MessageUpdateEvent}
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import scalikejdbc.DB
@@ -60,14 +61,17 @@ class Hub extends ListenerAdapter {
     }
   }
 
-  private def resolveParentTextChannel(genericMessageEvent: GenericMessageEvent): Option[GuildMessageChannel] = {
-    allCatch
-      .opt(genericMessageEvent.getChannel.asThreadChannel())
-      .fold {
-        allCatch.opt(genericMessageEvent.getChannel.asGuildMessageChannel())
-      } { threadChannel => // スレッドの場合は元のチャンネルを取得する
-        allCatch.opt(threadChannel.getParentMessageChannel.asStandardGuildMessageChannel())
-      }
+  private def resolveTextChannel(genericMessageEvent: GenericMessageEvent): (GuildMessageChannel, Option[ThreadChannel]) = {
+    val eventSourceChannel = genericMessageEvent.getChannel
+
+    allCatch.opt(eventSourceChannel.asThreadChannel()) match {
+      case Some(threadChannel) =>
+        // スレッドの場合は親チャンネルを取得
+        val parentTextChannel = threadChannel.getParentMessageChannel.asStandardGuildMessageChannel()
+        (parentTextChannel, Some(threadChannel))
+      case None =>
+        (eventSourceChannel.asGuildMessageChannel(), None)
+    }
   }
 
   private def extractCategoryName(channelName: String): Option[String] = {
@@ -81,77 +85,68 @@ class Hub extends ListenerAdapter {
     if (event.getAuthor.isBot) {
       // do nothing
     } else {
+      val sourceGuild = event.getGuild
       val sourceMessage = event.getMessage
+      val (guildMessageChannel, threadChannelOpt) = resolveTextChannel(event)
 
-      resolveParentTextChannel(event)
-        .foreach { parentTextChannel =>
-          extractCategoryName(parentTextChannel.getName).map { category =>
-            val guildChannels = event.getGuild.getChannels.asScala.toList
-            val guildMessageChannels = guildChannels.collect { case c: TextChannel => c }
-
-            guildMessageChannels.find(_.getName == s"hub-$category") match {
-              case Some(hubChannel) =>
-                val content = {
-                  val rawContent = sourceMessage.getContentRaw
-                  val mentions = sourceMessage.getMentions
-                  val sanitizedContent = sanitizeContent(rawContent, mentions)
-                  val messageLink = sourceMessage.getJumpUrl
-                  // 画像添付があるケース
-                  val urls = sourceMessage.getAttachments.asScala.map(_.getUrl).mkString("\n")
-
-                  templating(sanitizedContent, messageLink, urls)
-                }
-
-                // webhookがなかったら作成する
-                val webhooks = event.getGuild.retrieveWebhooks().complete().asScala
-                val webhookName = s"berner-hub-${category}"
-                val webHookClient = {
-                  val jdaWebHook = webhooks
-                    .find { webhook =>
-                      webhook.getChannel.getId == hubChannel.getId &&
-                      webhook.getName == webhookName
-                    }
-                    .getOrElse {
-                      hubChannel.createWebhook(webhookName).complete()
-                    }
-
-                  allCatch.opt(JDAWebhookClient.from(jdaWebHook))
-                }
-
-                // メッセージ送信
-                val webhookMessage = new WebhookMessageBuilder()
-                  .setContent(content)
-                  .setUsername(sourceMessage.getAuthor.getName)
-                  .setAvatarUrl(sourceMessage.getAuthor.getAvatarUrl)
-                  .build()
-
-                webHookClient
-                  .flatMap { webhookClient =>
-                    allCatch.opt(webhookClient.send(webhookMessage).get())
-                  }
-                  .map { hubMessage =>
-                    // DBに記録
-                    val now = OffsetDateTime.now()
-                    DB localTx { session =>
-                      HubMessageWriter.write(
-                        HubMessage(
-                          id = 0,
-                          sourceMessageId = sourceMessage.getId,
-                          sourceChannelId = sourceMessage.getChannel.getId,
-                          messageId = s"${hubMessage.getId}",
-                          channelId = s"${hubChannel.getId}",
-                          guildId = event.getGuild.getId,
-                          createdAt = now,
-                          updatedAt = now,
-                          deletedAt = None
-                        )
-                      )(session)
-                    }
-                  }
-              case _ => // do nothing
+      for {
+        category <- extractCategoryName(guildMessageChannel.getName)
+        channelName = s"hub-$category"
+        hubChannel <- sourceGuild.getTextChannelsByName(channelName, true).asScala.headOption
+        webhook <- allCatch.opt {
+          val webhooks = event.getGuild.retrieveWebhooks().complete().asScala
+          val webhookName = s"berner-hub-${category}"
+          val jdaWebHook = webhooks
+            .find { webhook =>
+              // webhookを探す
+              webhook.getChannel.getId == hubChannel.getId &&
+              webhook.getName == webhookName
             }
-          }
+            .getOrElse {
+              // webhookが存在しない場合は新しく作成する
+              hubChannel.createWebhook(webhookName).complete()
+            }
+
+          JDAWebhookClient.from(jdaWebHook)
         }
+        content = {
+          val rawContent = sourceMessage.getContentRaw
+          val mentions = sourceMessage.getMentions
+          val sanitizedContent = sanitizeContent(rawContent, mentions)
+          val messageLink = sourceMessage.getJumpUrl
+          // 添付画像
+          val urls = sourceMessage.getAttachments.asScala.map(_.getUrl).mkString("\n")
+
+          templating(sanitizedContent, messageLink, urls)
+        }
+        webhookMessage = {
+          new WebhookMessageBuilder()
+            .setContent(content)
+            .setUsername(sourceMessage.getAuthor.getName)
+            .setAvatarUrl(sourceMessage.getAuthor.getAvatarUrl)
+            .build()
+        }
+        hubMessage <- allCatch.opt(webhook.send(webhookMessage).get())
+      } yield {
+        // DBに記録
+        val now = OffsetDateTime.now()
+        DB localTx { session =>
+          HubMessageMappingWriter.write(
+            HubMessageMapping(
+              id = 0,
+              guildId = sourceGuild.getId,
+              sourceGuildMessageChannelId = guildMessageChannel.getId,
+              sourceThreadMessageChannelId = threadChannelOpt.map(_.getId),
+              sourceMessageId = sourceMessage.getId,
+              hubGuildMessageChannelId = hubChannel.getId,
+              hubMessageId = hubMessage.getId.toString,
+              createdAt = now,
+              updatedAt = now,
+              deletedAt = None
+            )
+          )(session)
+        }
+      }
     }
 
   }
@@ -160,87 +155,133 @@ class Hub extends ListenerAdapter {
     if (event.getAuthor.isBot) {
       // do nothing
     } else {
+      val sourceGuild = event.getGuild
       val sourceMessage = event.getMessage
+      val (guildMessageChannel, threadChannelOpt) = resolveTextChannel(event)
 
-      DB.readOnly { session =>
-        HubMessageReader.find(
-          sourceMessageId = sourceMessage.getId,
-          sourceChannelId = sourceMessage.getChannel.getId,
-          guildId = sourceMessage.getGuild.getId
-        )(session)
-      }.foreach { hubMessage =>
-        resolveParentTextChannel(event)
-          .foreach { parentTextChannel =>
-            extractCategoryName(parentTextChannel.getName).map { category =>
-              val webhooks = event.getGuild.retrieveWebhooks().complete().asScala
-              val webhookName = s"berner-hub-${category}"
-              val webHookClient = webhooks
-                .find { webhook =>
-                  webhook.getChannel.getId == hubMessage.channelId &&
-                  webhook.getName == webhookName
-                }
-                .flatMap { jdaWebHook =>
-                  allCatch.opt(JDAWebhookClient.from(jdaWebHook))
-                }
-
-              val content = {
-                val rawContent = sourceMessage.getContentRaw
-                val mentions = sourceMessage.getMentions
-                val sanitizedContent = sanitizeContent(rawContent, mentions)
-                val messageLink = sourceMessage.getJumpUrl
-                // 画像添付があるケース
-                val urls = sourceMessage.getAttachments.asScala.map(_.getUrl).mkString("\n")
-
-                templating(sanitizedContent, messageLink, urls)
-              }
-
-              // メッセージ送信
-              val webhookMessage = new WebhookMessageBuilder()
-                .setContent(content)
-                .setUsername(sourceMessage.getAuthor.getName)
-                .setAvatarUrl(sourceMessage.getAuthor.getAvatarUrl)
-                .build()
-
-              webHookClient.map { webhookClient =>
-                allCatch.opt(webhookClient.edit(hubMessage.messageId, webhookMessage).get())
-              }
+      for {
+        hmm <- DB.readOnly { session =>
+          HubMessageMappingReader.find(
+            sourceGuildMessageChannelId = guildMessageChannel.getId,
+            sourceThreadMessageChannelId = threadChannelOpt.map(_.getId),
+            sourceMessageId = sourceMessage.getId,
+            guildId = sourceGuild.getId
+          )(session)
+        }
+        category <- extractCategoryName(guildMessageChannel.getName)
+        webhookClient <- allCatch.opt {
+          // webhookの解決
+          val webhooks = event.getGuild.retrieveWebhooks().complete().asScala
+          val webhookName = s"berner-hub-${category}"
+          webhooks
+            .find { webhook =>
+              webhook.getChannel.getId == hmm.hubGuildMessageChannelId &&
+              webhook.getName == webhookName
             }
-          }
-      }
+            .map { jdaWebHook => JDAWebhookClient.from(jdaWebHook) }
+            .getOrElse(throw new RuntimeException("webhook not found"))
+        }
+        content = {
+          val rawContent = sourceMessage.getContentRaw
+          val mentions = sourceMessage.getMentions
+          val sanitizedContent = sanitizeContent(rawContent, mentions)
+          val messageLink = sourceMessage.getJumpUrl
+          // 画像添付があるケース
+          val urls = sourceMessage.getAttachments.asScala.map(_.getUrl).mkString("\n")
+
+          templating(sanitizedContent, messageLink, urls)
+        }
+        webhookMessage = {
+          new WebhookMessageBuilder()
+            .setContent(content)
+            .setUsername(sourceMessage.getAuthor.getName)
+            .setAvatarUrl(sourceMessage.getAuthor.getAvatarUrl)
+            .build()
+        }
+        _ <- allCatch.opt(webhookClient.edit(hmm.hubMessageId, webhookMessage).get())
+      } yield {}
     }
   }
 
   override def onMessageDelete(event: MessageDeleteEvent): Unit = {
-    resolveParentTextChannel(event)
-      .foreach { parentTextChannel =>
-        extractCategoryName(parentTextChannel.getName).map { category =>
-          DB localTx { session =>
-            HubMessageReader
-              .findForUpdate(
-                sourceMessageId = event.getMessageId,
-                sourceChannelId = event.getChannel.getId,
-                guildId = event.getGuild.getId
-              )(session)
-              .foreach { hubMessage =>
-                // webhookの解決
-                val webhooks = event.getGuild.retrieveWebhooks().complete().asScala
-                val webhookName = s"berner-hub-${category}"
-                webhooks
-                  .find { webhook =>
-                    webhook.getChannel.getId == hubMessage.channelId &&
-                    webhook.getName == webhookName
-                  }
-                  .flatMap { jdaWebHook =>
-                    allCatch.opt(JDAWebhookClient.from(jdaWebHook))
-                  }
-                  .map { webHookClient =>
-                    // メッセージの削除
-                    webHookClient.delete(hubMessage.messageId).get()
-                    HubMessageWriter.delete(hubMessage.id, OffsetDateTime.now())(session)
-                  }
-              }
+    val sourceGuild = event.getGuild
+    val (guildMessageChannel, threadChannelOpt) = resolveTextChannel(event)
+
+    for {
+      hmm <- DB.readOnly { session =>
+        HubMessageMappingReader.findForUpdate(
+          sourceGuildMessageChannelId = guildMessageChannel.getId,
+          sourceThreadMessageChannelId = threadChannelOpt.map(_.getId),
+          sourceMessageId = event.getMessageId,
+          guildId = sourceGuild.getId
+        )(session)
+      }
+      category <- extractCategoryName(guildMessageChannel.getName)
+      webhookClient <- allCatch.opt {
+        // webhookの解決
+        val webhooks = event.getGuild.retrieveWebhooks().complete().asScala
+        val webhookName = s"berner-hub-${category}"
+        webhooks
+          .find { webhook =>
+            webhook.getChannel.getId == hmm.hubGuildMessageChannelId &&
+            webhook.getName == webhookName
           }
+          .map { jdaWebHook => JDAWebhookClient.from(jdaWebHook) }
+          .getOrElse(throw new RuntimeException("webhook not found"))
+      }
+      _ <- allCatch.opt(webhookClient.delete(hmm.hubMessageId).get())
+    } yield {
+      DB.localTx { session =>
+        val now = OffsetDateTime.now()
+        HubMessageMappingWriter.delete(hmm.id, now)(session)
+      }
+    }
+  }
+
+  override def onChannelDelete(event: ChannelDeleteEvent): Unit = {
+    val sourceGuild = event.getGuild
+    val (guildMessageChannel, threadChannelOpt) = {
+      val eventSourceChannel = event.getChannel
+      allCatch.opt(eventSourceChannel.asThreadChannel()) match {
+        case Some(threadChannel) =>
+          // スレッドの場合は親チャンネルを解決
+          val parentTextChannel = threadChannel.getParentMessageChannel.asStandardGuildMessageChannel()
+          (parentTextChannel, Some(threadChannel))
+        case None =>
+          (eventSourceChannel.asGuildMessageChannel(), None)
+      }
+    }
+
+    for {
+      category <- extractCategoryName(guildMessageChannel.getName)
+      hubMessageMappings = threadChannelOpt.fold {
+        // チャンネルを消した場合は直下のスレッドも対象
+        DB.readOnly { session =>
+          HubMessageMappingReader.find(
+            sourceGuildMessageChannelId = guildMessageChannel.getId,
+            guildId = sourceGuild.getId
+          )(session)
+        }
+      } { threadChannel =>
+        // スレッドを消した場合はスレッドのみ
+        DB.readOnly { session =>
+          HubMessageMappingReader.find(
+            sourceGuildMessageChannelId = guildMessageChannel.getId,
+            sourceThreadMessageChannelId = threadChannel.getId,
+            guildId = sourceGuild.getId
+          )(session)
         }
       }
+      hubChannel <- sourceGuild.getTextChannelsByName(s"hub-$category", true).asScala.headOption
+    } yield {
+      hubMessageMappings.foreach { hmm =>
+        val id = hmm.hubMessageId
+
+        hubChannel.deleteMessageById(id).complete()
+
+        val now = OffsetDateTime.now()
+        DB localTx { session => HubMessageMappingWriter.delete(hmm.id, now)(session) }
+      }
+    }
   }
 }
