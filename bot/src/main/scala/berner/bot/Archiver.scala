@@ -50,7 +50,7 @@ class Archiver extends ListenerAdapter {
       event.deferReply().queue()
     } else {
       val downloadPassword = TextInput
-        .create(modalZipPassword, "Zip Password (debug)", TextInputStyle.SHORT)
+        .create(modalZipPassword, "Zip Password", TextInputStyle.SHORT)
         .setRequired(true)
         .setMinLength(8)
         .setMaxLength(128)
@@ -66,6 +66,7 @@ class Archiver extends ListenerAdapter {
   }
 
   override def onModalInteraction(event: ModalInteractionEvent): Unit = {
+    // TODO メッセージ件数が多すぎる場合にOOMを起こす可能性がありゅ
     // メッセージ全件取得
     def fetchHistory(targetChannel: MessageChannel): Seq[Message] = {
       @tailrec
@@ -133,7 +134,7 @@ class Archiver extends ListenerAdapter {
             )
           }
 
-          // アップロード制限を超える可能性がある
+          // TODO アップロード制限を超える可能性があるため対策したい
           // そのため外部のストレージに保存 -> ダウンロードリンクを返す みたいな形にしたい
 
           val data = fromValues(messages).noSpaces
