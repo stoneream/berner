@@ -67,20 +67,20 @@ class Archiver extends ListenerAdapter {
       def g(afterMessageId: String, ls: List[Message]): List[Message] = {
         val history = targetChannel.getHistoryAfter(afterMessageId, 100).complete()
         val messages = history.getRetrievedHistory.asScala.toList
+        val headOption = messages.headOption
 
-        messages.reverse match {
-          case last :: _ => g(last.getId, messages ::: ls)
-          case Nil => ls
+        headOption match {
+          case Some(head) =>
+            g(head.getId, ls ::: messages)
+          case None => ls
         }
       }
 
       val history = targetChannel.getHistoryFromBeginning(100).complete()
       val messages = history.getRetrievedHistory.asScala.toList
+      val lastOption = messages.lastOption
 
-      messages.reverse match {
-        case last :: _ => g(last.getId, messages)
-        case Nil => Nil
-      }
+      lastOption.map { last => g(last.getId, messages) }.getOrElse(Nil)
     }
 
     if (event.getModalId == modalCustomId) {
@@ -113,7 +113,7 @@ class Archiver extends ListenerAdapter {
           "content" -> fromString(message.getContentRaw),
           "attachments" -> fromValues(attachments.asScala.map(a => fromString(a.getUrl)).toList),
           "created_at" -> fromString(createdAt.toString),
-          "edited_at" -> fromString(message.getTimeEdited.toString)
+          "edited_at" -> Option(message.getTimeEdited).map(d => fromString(d.toString)).getOrElse(Json.Null)
         )
       }
 
