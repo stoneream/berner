@@ -10,15 +10,11 @@ object Dependencies {
     val log4cats = "2.6.0"
     val catsEffect = "3.5.0"
     val catsMTL = "1.3.1"
-    val circe = "0.14.1"
     val http4s = "0.23.21"
-    val sttp = "3.9.4"
     val http4sJDKHttpClient = "0.9.1"
     val mariadbJavaClient = "3.1.4"
     val scalikejdbc = "4.2.1"
     val doobie = "1.0.0-RC4"
-    val jda = "5.0.0-beta.20"
-    val discordWebhooks = "0.8.4"
     val scalatest = "3.2.15"
   }
 
@@ -41,7 +37,8 @@ object Dependencies {
     scalikejdbc,
     mariadb,
     typesafeConfig,
-    circe
+    circe,
+    zip4j
   ).flatten
 
   // logging
@@ -52,7 +49,6 @@ object Dependencies {
   // metrics
   lazy val jmxExporterJavaAgent =
     "io.prometheus.jmx" % "jmx_prometheus_javaagent" % Versions.jmxExporterJavaAgent
-
 
   // config
   lazy val typesafeConfig: Seq[ModuleID] = Seq(
@@ -91,17 +87,20 @@ object Dependencies {
   )
 
   // circe
+  lazy val circeVersion = "0.14.1"
   lazy val circe: Seq[ModuleID] = Seq(
-    "io.circe" %% "circe-generic" % Versions.circe,
-    "io.circe" %% "circe-literal" % Versions.circe,
-    "io.circe" %% "circe-parser" % Versions.circe,
-    "io.circe" %% "circe-optics" % Versions.circe,
-    "io.circe" %% "circe-generic-extras" % Versions.circe
+    "io.circe" %% "circe-generic" % circeVersion,
+    "io.circe" %% "circe-literal" % circeVersion,
+    "io.circe" %% "circe-parser" % circeVersion,
+    "io.circe" %% "circe-optics" % circeVersion,
+    "io.circe" %% "circe-generic-extras" % circeVersion
   )
 
+  // sttp
+  lazy val sttpVersion = "3.9.4"
   lazy val sttp: Seq[ModuleID] = Seq(
-    "com.softwaremill.sttp.client3" %% "core" % Versions.sttp,
-    "com.softwaremill.sttp.client3" %% "circe" % Versions.sttp
+    "com.softwaremill.sttp.client3" %% "core" % sttpVersion,
+    "com.softwaremill.sttp.client3" %% "circe" % sttpVersion
   )
 
   // database
@@ -123,8 +122,12 @@ object Dependencies {
 
   // discord
   lazy val jda: Seq[ModuleID] = Seq(
-    "net.dv8tion" % "JDA" % Versions.jda,
-    "club.minnced" % "discord-webhooks" % Versions.discordWebhooks
+    "net.dv8tion" % "JDA" % "5.0.0-beta.20",
+    "club.minnced" % "discord-webhooks" % "0.8.4"
+  )
+
+  lazy val zip4j: Seq[ModuleID] = Seq(
+    "net.lingala.zip4j" % "zip4j" % "2.11.5"
   )
 
   // test

@@ -19,6 +19,7 @@ object Main extends App {
       .enableIntents(GatewayIntent.GUILD_WEBHOOKS)
       .enableIntents(GatewayIntent.GUILD_MESSAGES)
       .addEventListeners(new Hub)
+      .addEventListeners(new Archiver)
       .addEventListeners(new Ping)
       .build()
 
