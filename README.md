@@ -2,18 +2,24 @@
 
 ![berner](./berner.png)
 
-## TODO
-
-- 次の説明を記述する
-  - 追加した環境変数
-  - 追加した新機能
-  - dockerイメージの起動方法が変わった件
-
 ## About
 
-http4sの素振りでdiscordのbotを書いてる  
-よくわからんまま書いたら闇鍋みたいになってる
-実装がひどいことになってきたので直したい
+http4s（もといcats/cats effect）の素振りでDiscordのBotを書いていた。  
+が、ひどいことになったためJDAで書き直した。  
+
+## 機能
+
+### hub
+
+チャンネル **prefix**-suffix が存在するとき、 **hub**-**prefix** に投稿を集約する。  
+(おそらく`hub-hub`チャンネルを作成すると無限ループを起こす。)  
+集約されるメッセージは直下のスレッドも対象となる。  
+また、メッセージが削除されたり編集された場合は転送先にも反映される。  
+
+### archiver
+
+`/archive` コマンドでチャンネルのメッセージをテキストファイル（パスワード付きzipファイル）にする。  
+ファイルのアップロード制限の考慮がされていないため履歴が多すぎるとうまく動作しない可能性がある。  
 
 ## マイグレーションについて
 
@@ -48,6 +54,8 @@ $ flyway -configFiles="flyway.sample.conf" migrate
 
 ![memo2](./memo2.png)
 
+不必要な権限もつけている。のでよしなに...
+
 ## Dockerイメージのビルド
 
 ```
@@ -60,10 +68,10 @@ Docker Plugin — sbt-native-packager 1.9.0 documentation : https://www.scala-sb
 
 ## Dockerイメージの実行例
 
-stoneream/berner general - Docker Hub : https://hub.docker.com/repository/docker/stoneream/berner/general
+stoneream/berner-bot general | Docker Hub : https://hub.docker.com/repository/docker/stoneream/berner-bot/general
 
 ```
-docker run -it --rm --env-file ./.env berner:VERSION
+docker run -it --rm --env-file ./.env stoneream/berner-bot:VERSION
 ```
 
 必要に応じて`--add-host=host.docker.internal:host-gateway`
@@ -78,10 +86,6 @@ docker run -it --rm --env-file ./.env berner:VERSION
 | BERNER_DB_DEFAULT_NAME     | データベースの名前       |                           |
 | BERNER_DB_DEFAULT_USER     | データベースのユーザー名 |                           |
 | BERNER_DB_DEFAULT_PASSWORD | データベースのパスワード |                           |
-
-## メトリクスの取得
-
-jmx-exporterを導入し、9090でlistenしている。  
 
 ### Ref
 
