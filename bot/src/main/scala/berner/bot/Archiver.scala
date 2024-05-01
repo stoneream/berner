@@ -24,7 +24,7 @@ import scala.jdk.CollectionConverters._
 import scala.util.control.Exception.allCatch
 
 class Archiver extends ListenerAdapter {
-  private val slashCommandName = "archive"
+  private val slashCommandName = "archiver"
   private val modalCustomId = "berner-archiver"
   private val modalZipPassword = "zip-password"
 
