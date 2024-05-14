@@ -14,7 +14,7 @@ lazy val baseSettings = Seq(
     )
   ),
   // scala settings
-  scalaVersion := "2.13.11",
+  scalaVersion := "2.13.14",
   scalacOptions ++= Seq(
     "-Ywarn-unused",
     "-Yrangepos"
@@ -22,7 +22,6 @@ lazy val baseSettings = Seq(
   // scalafix settings
   semanticdbEnabled := true,
   semanticdbVersion := scalafixSemanticdb.revision,
-  ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
   // scalafmt settings
   scalafmtOnCompile := true
 )
