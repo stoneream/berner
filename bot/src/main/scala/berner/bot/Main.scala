@@ -23,8 +23,7 @@ object Main extends App {
       .addEventListeners(new Ping)
       .build()
 
-    api.awaitReady()
-
+    api.awaitShutdown()
   } finally {
     DBs.closeAll()
   }
