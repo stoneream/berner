@@ -25,6 +25,8 @@ object Main extends App {
 
     api.awaitReady()
 
-  } finally {}
+  } finally {
+    DBs.closeAll()
+  }
 
 }
