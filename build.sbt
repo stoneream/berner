@@ -13,6 +13,9 @@ lazy val baseSettings = Seq(
       url("https://github.com/stoneream")
     )
   ),
+  resolvers ++= Seq(
+    "slack-webhook-appender" at "https://raw.github.com/dwango/slack-webhook-appender/mvn-repo/"
+  ),
   // scala settings
   scalaVersion := "2.13.14",
   scalacOptions ++= Seq(

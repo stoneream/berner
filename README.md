@@ -5,7 +5,7 @@
 ## About
 
 http4s（もといcats/cats effect）の素振りでDiscordのBotを書いていた。  
-が、ひどいことになったためJDAで書き直した。  
+が、ひどいことになったためJDAで書き直した。
 
 ## 機能
 
@@ -14,12 +14,12 @@ http4s（もといcats/cats effect）の素振りでDiscordのBotを書いてい
 チャンネル **prefix**-suffix が存在するとき、 **hub**-**prefix** に投稿を集約する。  
 (おそらく`hub-hub`チャンネルを作成すると無限ループを起こす。)  
 集約されるメッセージは直下のスレッドも対象となる。  
-また、メッセージが削除されたり編集された場合は転送先にも反映される。  
+また、メッセージが削除されたり編集された場合は転送先にも反映される。
 
 ### archiver
 
 `/archive` コマンドでチャンネルのメッセージをテキストファイル（パスワード付きzipファイル）にする。  
-ファイルのアップロード制限の考慮がされていないため履歴が多すぎるとうまく動作しない可能性がある。  
+ファイルのアップロード制限の考慮がされていないため履歴が多すぎるとうまく動作しない可能性がある。
 
 ## マイグレーションについて
 
@@ -64,7 +64,8 @@ sbt docker:publishLocal
 
 ### Ref
 
-Docker Plugin — sbt-native-packager 1.9.0 documentation : https://www.scala-sbt.org/sbt-native-packager/formats/docker.html
+Docker Plugin — sbt-native-packager 1.9.0
+documentation : https://www.scala-sbt.org/sbt-native-packager/formats/docker.html
 
 ## Dockerイメージの実行例
 
@@ -78,15 +79,17 @@ docker run -it --rm --env-file ./.env stoneream/berner-bot:VERSION
 
 ## 環境変数
 
-| 変数名                     | 説明                     | 補足                      |
-| -------------------------- | ------------------------ | ------------------------- |
-| BERNER_DISCORD_TOKEN       | DiscordのBotのトークン   | Developer Portal から取得 |
-| BERNER_DB_DEFAULT_HOST     | データベースのホスト     |                           |
-| BERNER_DB_DEFAULT_PORT     | データベースのポート     |                           |
-| BERNER_DB_DEFAULT_NAME     | データベースの名前       |                           |
-| BERNER_DB_DEFAULT_USER     | データベースのユーザー名 |                           |
-| BERNER_DB_DEFAULT_PASSWORD | データベースのパスワード |                           |
+| 変数名                        | 説明               | 補足                    |
+|----------------------------|------------------|-----------------------|
+| BERNER_DISCORD_TOKEN       | DiscordのBotのトークン | Developer Portal から取得 |
+| BERNER_DB_DEFAULT_HOST     | データベースのホスト       |                       |
+| BERNER_DB_DEFAULT_PORT     | データベースのポート       |                       |
+| BERNER_DB_DEFAULT_NAME     | データベースの名前        |                       |
+| BERNER_DB_DEFAULT_USER     | データベースのユーザー名     |                       |
+| BERNER_DB_DEFAULT_PASSWORD | データベースのパスワード     |                       |
+| BERNER_ALERT_WEBHOOK_URL   | アラート通知用のWebhook  | logback.xmlを参照        |
 
 ### Ref
 
-- prometheus/jmx_exporter: A process for exposing JMX Beans via HTTP for Prometheus consumption : https://github.com/prometheus/jmx_exporter
+- prometheus/jmx_exporter: A process for exposing JMX Beans via HTTP for Prometheus
+  consumption : https://github.com/prometheus/jmx_exporter

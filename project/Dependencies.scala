@@ -3,7 +3,6 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val logback = "1.4.7"
     val jmxExporterJavaAgent = "0.20.0"
     val typesafeConfig = "1.4.2"
     val cats = "2.9.0"
@@ -19,7 +18,7 @@ object Dependencies {
   }
 
   val deps: Seq[ModuleID] = Seq(
-    logback,
+    logging,
     Seq(jmxExporterJavaAgent),
     typesafeConfig,
     scopt,
@@ -33,7 +32,7 @@ object Dependencies {
 
   lazy val bot: Seq[sbt.ModuleID] = Seq(
     jda,
-    logback,
+    logging,
     scalikejdbc,
     mariadb,
     typesafeConfig,
@@ -42,8 +41,10 @@ object Dependencies {
   ).flatten
 
   // logging
-  lazy val logback: Seq[ModuleID] = Seq(
-    "ch.qos.logback" % "logback-classic" % Versions.logback
+  lazy val logging: Seq[ModuleID] = Seq(
+    "ch.qos.logback" % "logback-classic" % "1.5.6",
+    "org.codehaus.janino" % "janino" % "3.1.12",
+    "jp.co.dwango" % "slack-webhook-appender" % "0.2.1"
   )
 
   // metrics
