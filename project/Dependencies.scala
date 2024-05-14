@@ -12,8 +12,8 @@ object Dependencies {
     val catsMTL = "1.3.1"
     val http4s = "0.23.21"
     val http4sJDKHttpClient = "0.9.1"
-    val mariadbJavaClient = "3.1.4"
-    val scalikejdbc = "4.2.1"
+    val mariadbJavaClient = "3.3.3"
+    val scalikejdbc = "4.3.0"
     val doobie = "1.0.0-RC4"
     val scalatest = "3.2.15"
   }
@@ -97,7 +97,7 @@ object Dependencies {
   )
 
   // sttp
-  lazy val sttpVersion = "3.9.4"
+  lazy val sttpVersion = "3.9.6"
   lazy val sttp: Seq[ModuleID] = Seq(
     "com.softwaremill.sttp.client3" %% "core" % sttpVersion,
     "com.softwaremill.sttp.client3" %% "circe" % sttpVersion
@@ -122,7 +122,7 @@ object Dependencies {
 
   // discord
   lazy val jda: Seq[ModuleID] = Seq(
-    "net.dv8tion" % "JDA" % "5.0.0-beta.20",
+    "net.dv8tion" % "JDA" % "5.0.0-beta.24",
     "club.minnced" % "discord-webhooks" % "0.8.4"
   )
 
