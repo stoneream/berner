@@ -275,12 +275,17 @@ class Hub extends ListenerAdapter {
       hubChannel <- sourceGuild.getTextChannelsByName(s"hub-$category", true).asScala.headOption
     } yield {
       hubMessageMappings.foreach { hmm =>
-        val id = hmm.hubMessageId
+        // 途中で例外が起きるとループが落ちる
+        // 例外をキャッチして処理を続行する
+        // 本来ならもう少し丁寧にエラー処理をするべきだが...
+        allCatch.opt {
+          val id = hmm.hubMessageId
 
-        hubChannel.deleteMessageById(id).complete()
+          hubChannel.deleteMessageById(id).complete()
 
-        val now = OffsetDateTime.now()
-        DB localTx { session => HubMessageMappingWriter.delete(hmm.id, now)(session) }
+          val now = OffsetDateTime.now()
+          DB localTx { session => HubMessageMappingWriter.delete(hmm.id, now)(session) }
+        }
       }
     }
   }
