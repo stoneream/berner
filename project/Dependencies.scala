@@ -32,7 +32,6 @@ object Dependencies {
 
   lazy val bot: Seq[sbt.ModuleID] = Seq(
     jda,
-    logging,
     scalikejdbc,
     mariadb,
     typesafeConfig,

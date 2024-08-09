@@ -1,6 +1,7 @@
 package berner.bot
 
 import berner.database.{HubMessageMappingReader, HubMessageMappingWriter}
+import berner.logging.Logger
 import berner.model.hub.HubMessageMapping
 import club.minnced.discord.webhook.external.JDAWebhookClient
 import club.minnced.discord.webhook.send.WebhookMessageBuilder
@@ -16,7 +17,7 @@ import java.time.OffsetDateTime
 import scala.jdk.CollectionConverters._
 import scala.util.control.Exception._
 
-class Hub extends ListenerAdapter {
+class Hub extends ListenerAdapter with Logger {
 
   private def sanitizeContent(rawContent: String, mentions: Mentions): String = {
     val mentionedUser = mentions.getUsers.asScala.toList
@@ -126,25 +127,28 @@ class Hub extends ListenerAdapter {
             .setAvatarUrl(sourceMessage.getAuthor.getAvatarUrl)
             .build()
         }
-        hubMessage <- allCatch.opt(webhook.send(webhookMessage).get())
       } yield {
-        // DBに記録
-        val now = OffsetDateTime.now()
-        DB localTx { session =>
-          HubMessageMappingWriter.write(
-            HubMessageMapping(
-              id = 0,
-              guildId = sourceGuild.getId,
-              sourceGuildMessageChannelId = guildMessageChannel.getId,
-              sourceThreadMessageChannelId = threadChannelOpt.map(_.getId),
-              sourceMessageId = sourceMessage.getId,
-              hubGuildMessageChannelId = hubChannel.getId,
-              hubMessageId = hubMessage.getId.toString,
-              createdAt = now,
-              updatedAt = now,
-              deletedAt = None
-            )
-          )(session)
+        allCatch.either(webhook.send(webhookMessage).get()) match {
+          case Right(hubMessage) =>
+            // DBに記録
+            val now = OffsetDateTime.now()
+            DB localTx { session =>
+              HubMessageMappingWriter.write(
+                HubMessageMapping(
+                  id = 0,
+                  guildId = sourceGuild.getId,
+                  sourceGuildMessageChannelId = guildMessageChannel.getId,
+                  sourceThreadMessageChannelId = threadChannelOpt.map(_.getId),
+                  sourceMessageId = sourceMessage.getId,
+                  hubGuildMessageChannelId = hubChannel.getId,
+                  hubMessageId = hubMessage.getId.toString,
+                  createdAt = now,
+                  updatedAt = now,
+                  deletedAt = None
+                )
+              )(session)
+            }
+          case Left(e) => warn("メッセージの送信に失敗しました", e)
         }
       }
     }
@@ -198,8 +202,12 @@ class Hub extends ListenerAdapter {
             .setAvatarUrl(sourceMessage.getAuthor.getAvatarUrl)
             .build()
         }
-        _ <- allCatch.opt(webhookClient.edit(hmm.hubMessageId, webhookMessage).get())
-      } yield {}
+      } yield {
+        allCatch.either(webhookClient.edit(hmm.hubMessageId, webhookMessage).get()) match {
+          case Left(e) => warn("メッセージの編集に失敗しました", e)
+          case Right(_) => // do nothing
+        }
+      }
     }
   }
 
@@ -229,11 +237,14 @@ class Hub extends ListenerAdapter {
           .map { jdaWebHook => JDAWebhookClient.from(jdaWebHook) }
           .getOrElse(throw new RuntimeException("webhook not found"))
       }
-      _ <- allCatch.opt(webhookClient.delete(hmm.hubMessageId).get())
     } yield {
-      DB.localTx { session =>
-        val now = OffsetDateTime.now()
-        HubMessageMappingWriter.delete(hmm.id, now)(session)
+      allCatch.either(webhookClient.delete(hmm.hubMessageId).get()) match {
+        case Left(e) => warn("メッセージの削除に失敗しました", e) // TODO 消し漏らしを検知 & 削除する仕組みがほしい
+        case Right(_) =>
+          DB.localTx { session =>
+            val now = OffsetDateTime.now()
+            HubMessageMappingWriter.delete(hmm.id, now)(session)
+          }
       }
     }
   }
@@ -242,13 +253,15 @@ class Hub extends ListenerAdapter {
     val sourceGuild = event.getGuild
     val (guildMessageChannel, threadChannelOpt) = {
       val eventSourceChannel = event.getChannel
-      allCatch.opt(eventSourceChannel.asThreadChannel()) match {
-        case Some(threadChannel) =>
+
+      allCatch.either(eventSourceChannel.asThreadChannel()) match {
+        case Left(value) =>
+          warn("チャンネルもしくはスレッドが見つかりませんでした", value)
+          (eventSourceChannel.asGuildMessageChannel(), None)
+        case Right(threadChannel) =>
           // スレッドの場合は親チャンネルを解決
           val parentTextChannel = threadChannel.getParentMessageChannel.asStandardGuildMessageChannel()
           (parentTextChannel, Some(threadChannel))
-        case None =>
-          (eventSourceChannel.asGuildMessageChannel(), None)
       }
     }
 
@@ -277,14 +290,16 @@ class Hub extends ListenerAdapter {
       hubMessageMappings.foreach { hmm =>
         // 途中で例外が起きるとループが落ちる
         // 例外をキャッチして処理を続行する
-        // 本来ならもう少し丁寧にエラー処理をするべきだが...
-        allCatch.opt {
+        allCatch.either {
           val id = hmm.hubMessageId
 
           hubChannel.deleteMessageById(id).complete()
 
           val now = OffsetDateTime.now()
           DB localTx { session => HubMessageMappingWriter.delete(hmm.id, now)(session) }
+        } match {
+          case Left(e) => warn("メッセージの削除に失敗しました", e)
+          case Right(_) => // do nothing
         }
       }
     }
