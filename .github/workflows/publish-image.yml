@@ -1,4 +1,4 @@
-name : Publish Docker Image
+name: Publish Docker Image
 
 on:
   workflow_dispatch:
@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Get current date
         env:
-          TZ: 'Asia/Tokyo'
+          TZ: "Asia/Tokyo"
         id: get-current-date
         run: echo "value=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
       - name: Create Tag
@@ -35,6 +35,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Build and push
-        run: sbt bot/docker:publish batch/docker:publish
+        run: sbt bot/docker:publish
       - name: Push tag
         run: git push origin v-${{ github.ref_name }}-${{ steps.get-current-date.outputs.value }}
