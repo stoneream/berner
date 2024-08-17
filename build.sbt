@@ -59,7 +59,7 @@ lazy val jmxExporterConfig = Seq(
 
 lazy val root = (project in file("."))
   .settings(baseSettings)
-  .aggregate(bot, batch, logging)
+  .aggregate(bot, logging)
 
 lazy val logging = (project in file("logging"))
   .settings(baseSettings)
@@ -79,14 +79,3 @@ lazy val bot = (project in file("bot"))
     Universal / javaOptions ++= Seq("-Dpidfile.path=/dev/null")
   )
   .dependsOn(logging)
-
-lazy val batch = (project in file("batch"))
-  .enablePlugins(DockerPlugin, JavaAgent, JavaAppPackaging)
-  .settings(baseSettings)
-  .settings(dockerPluginConfig)
-  .settings(
-    name := "berner-batch",
-    Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
-    libraryDependencies ++= Dependencies.deps, // todo 依存関係を整理する
-    Universal / javaOptions ++= Seq("-Dpidfile.path=/dev/null")
-  )
