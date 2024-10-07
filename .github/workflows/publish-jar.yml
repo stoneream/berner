@@ -1,6 +1,9 @@
 name: Build & Create release draft
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -20,7 +23,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a ${{ steps.create_release_draft.tag_name }} "Released ${{ steps.create_release_draft.tag_name }}"
+          git tag -a ${{ steps.create_release_draft.tag_name }} "released"
       - name: Setup Scala
         uses: olafurpg/setup-scala@v13
         with:
