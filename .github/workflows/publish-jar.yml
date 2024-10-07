@@ -19,11 +19,6 @@ jobs:
         uses: release-drafter/release-drafter@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Create Tag
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a ${{ steps.create_release_draft.tag_name }} "released"
       - name: Setup Scala
         uses: olafurpg/setup-scala@v13
         with:
