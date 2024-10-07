@@ -88,8 +88,3 @@ docker run -it --rm --env-file ./.env stoneream/berner-bot:VERSION
 | BERNER_DB_DEFAULT_USER     | データベースのユーザー名     |                       |
 | BERNER_DB_DEFAULT_PASSWORD | データベースのパスワード     |                       |
 | BERNER_ALERT_WEBHOOK_URL   | アラート通知用のWebhook  | logback.xmlを参照        |
-
-### Ref
-
-- prometheus/jmx_exporter: A process for exposing JMX Beans via HTTP for Prometheus
-  consumption : https://github.com/prometheus/jmx_exporter

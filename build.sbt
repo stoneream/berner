@@ -26,35 +26,22 @@ lazy val baseSettings = Seq(
   semanticdbEnabled := true,
   semanticdbVersion := scalafixSemanticdb.revision,
   // scalafmt settings
-  scalafmtOnCompile := true
-)
-
-// JMX Settings
-
-lazy val jmxExporterPort = 9090
-
-// Docker用のJavaAgent設定
-lazy val dockerJavaAgentSetting = JavaAgent(
-  Dependencies.jmxExporterJavaAgent,
-  arguments = s"$jmxExporterPort:/opt/docker/conf/jmx_exporter_config.yml"
-)
-
-// ローカル実行用のJavaAgent設定 (あんまり使わない)
-lazy val defaultJavaAgentsSetting = JavaAgent(
-  Dependencies.jmxExporterJavaAgent,
-  scope = JavaAgent.AgentScope(run = true),
-  arguments = s"$jmxExporterPort:${file("src/universal/conf/jmx_exporter_config.yml").getAbsolutePath}"
-)
-
-// DockerPluginの設定
-lazy val dockerPluginConfig = Seq(
-  dockerBaseImage := "azul/zulu-openjdk:11-latest",
-  dockerUsername := Some("stoneream")
-)
-
-lazy val jmxExporterConfig = Seq(
-  dockerExposedPorts := Seq(jmxExporterPort),
-  javaAgents += dockerJavaAgentSetting
+  scalafmtOnCompile := true,
+  // sbt-assembly settings
+  assembly / assemblyMergeStrategy := {
+    case PathList("META-INF", xs @ _*) =>
+      (xs map { _.toLowerCase }) match {
+        case "services" :: xs =>
+          MergeStrategy.filterDistinctLines
+        case _ => MergeStrategy.discard
+      }
+    case x if x.endsWith("module-info.class") => MergeStrategy.discard
+    case "reference.conf" => MergeStrategy.concat
+    case x =>
+      val oldStrategy = (ThisBuild / assemblyMergeStrategy).value
+      oldStrategy(x)
+  },
+  assembly / assemblyJarName := s"${name.value}.jar"
 )
 
 lazy val root = (project in file("."))
@@ -69,9 +56,8 @@ lazy val logging = (project in file("logging"))
   )
 
 lazy val bot = (project in file("bot"))
-  .enablePlugins(DockerPlugin, JavaAgent, JavaAppPackaging)
+  .enablePlugins(DockerPlugin, JavaAppPackaging)
   .settings(baseSettings)
-  .settings(dockerPluginConfig)
   .settings(
     name := "berner-bot",
     Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",

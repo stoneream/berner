@@ -1,0 +1,53 @@
+name: Build & Create release draft
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Create Release Draft
+        id: create_release_draft
+        uses: release-drafter/release-drafter@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Tag
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a ${{ steps.create_release_draft.tag_name }} "Released ${{ steps.create_release_draft.tag_name }}"
+      - name: Setup Scala
+        uses: olafurpg/setup-scala@v13
+        with:
+          java-version: zulu@1.11
+      - name: Build fat jar
+        run: sbt bot/assembly
+      - name: Bundle artifacts
+        id: bundle-artifacts-path
+        run: |
+          VERSION=${{ steps.create_release_draft.tag_name }}
+          FILENAME=berner-${VERSION}
+          WORKDIR=${FILENAME}
+          BUNDLE_FILE_NAME=${FILENAME}.zip
+          BUNDLE_FILE_PATH=${{ github.workspace }}/${BUNDLE_FILE_NAME}
+
+          mkdir -p ${WORKDIR}
+          cp bot/target*/berner-bot.jar ${WORKDIR}/berner-bot.jar
+          zip -r ${BUNDLE_FILE_NAME} ${WORKDIR}
+
+          echo "artifact_bundle_path=${BUNDLE_FILE_PATH}" >> $GITHUB_OUTPUT
+          echo "artifact_bundle_filename=${BUNDLE_FILE_NAME}" >> $GITHUB_OUTPUT
+      - name: Upload Asset
+        uses: shogo82148/actions-upload-release-asset@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          upload_url: ${{ steps.create_release_draft.outputs.upload_url }}
+          asset_path: ${{ steps.bundle-artifacts-path.outputs.artifact_bundle_path }}
+          asset_name: ${{ steps.bundle-artifacts-path.outputs.artifact_bundle_filename }}
+          overwrite: true # すでに存在する場合は上書き
+          asset_content_type: application/zip
