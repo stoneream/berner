@@ -28,14 +28,13 @@ jobs:
       - name: Bundle artifacts
         id: bundle-artifacts-path
         run: |
-          VERSION=${{ steps.create_release_draft.tag_name }}
-          FILENAME=berner-${VERSION}
+          FILENAME=berner
           WORKDIR=${FILENAME}
           BUNDLE_FILE_NAME=${FILENAME}.zip
           BUNDLE_FILE_PATH=${{ github.workspace }}/${BUNDLE_FILE_NAME}
 
           mkdir -p ${WORKDIR}
-          cp bot/target*/berner-bot.jar ${WORKDIR}/berner-bot.jar
+          cp bot/target/*/berner-bot.jar ${WORKDIR}/berner-bot.jar
           zip -r ${BUNDLE_FILE_NAME} ${WORKDIR}
 
           echo "artifact_bundle_path=${BUNDLE_FILE_PATH}" >> $GITHUB_OUTPUT
