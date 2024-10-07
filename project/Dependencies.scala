@@ -18,10 +18,6 @@ object Dependencies {
     "jp.co.dwango" % "slack-webhook-appender" % "0.2.1"
   )
 
-  // metrics
-  lazy val jmxExporterJavaAgent =
-    "io.prometheus.jmx" % "jmx_prometheus_javaagent" % "1.1.0"
-
   // config
   lazy val typesafeConfig: Seq[ModuleID] = Seq(
     "com.typesafe" % "config" % "1.4.3"
@@ -44,7 +40,9 @@ object Dependencies {
 
   // database
   lazy val mariadb: Seq[ModuleID] = Seq(
-    "org.mariadb.jdbc" % "mariadb-java-client" % "3.4.1"
+    "org.mariadb.jdbc" % "mariadb-java-client" % "3.4.1" excludeAll (
+      ExclusionRule("org.slf4j", "jcl-over-slf4j") // 依存がぶつかるので除外
+    )
   )
 
   val scalikejdbcVersion = "4.3.0"
