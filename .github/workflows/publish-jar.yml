@@ -14,9 +14,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Get current date
+        env:
+          TZ: "Asia/Tokyo"
+        id: get-current-date
+        run: echo "value=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+      - name: Create Tag
+        id: create-tag
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          TAG_NAME=${{ github.ref_name }}-${{ steps.get-current-date.outputs.value }}
+          git tag -a ${TAG_NAME} -m "Build at ${{ steps.get-current-date.outputs.value }}"
+          echo "tag=${TAG_NAME}" >> $GITHUB_OUTPUT
       - name: Create Release Draft
         id: create_release_draft
         uses: release-drafter/release-drafter@v5
+        with:
+          tag: ${{ steps.create-tag.outputs.tag }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup Scala
@@ -28,7 +43,7 @@ jobs:
       - name: Bundle artifacts
         id: bundle-artifacts-path
         run: |
-          FILENAME=berner
+          FILENAME=berner-${{ steps.create-tag.outputs.tag}}
           WORKDIR=${FILENAME}
           BUNDLE_FILE_NAME=${FILENAME}.zip
           BUNDLE_FILE_PATH=${{ github.workspace }}/${BUNDLE_FILE_NAME}
