@@ -56,27 +56,6 @@ $ flyway -configFiles="flyway.sample.conf" migrate
 
 不必要な権限もつけている。のでよしなに...
 
-## Dockerイメージのビルド
-
-```
-sbt docker:publishLocal
-```
-
-### Ref
-
-Docker Plugin — sbt-native-packager 1.9.0
-documentation : https://www.scala-sbt.org/sbt-native-packager/formats/docker.html
-
-## Dockerイメージの実行例
-
-stoneream/berner-bot general | Docker Hub : https://hub.docker.com/repository/docker/stoneream/berner-bot/general
-
-```
-docker run -it --rm --env-file ./.env stoneream/berner-bot:VERSION
-```
-
-必要に応じて`--add-host=host.docker.internal:host-gateway`
-
 ## 環境変数
 
 | 変数名                        | 説明               | 補足                    |
@@ -87,4 +66,4 @@ docker run -it --rm --env-file ./.env stoneream/berner-bot:VERSION
 | BERNER_DB_DEFAULT_NAME     | データベースの名前        |                       |
 | BERNER_DB_DEFAULT_USER     | データベースのユーザー名     |                       |
 | BERNER_DB_DEFAULT_PASSWORD | データベースのパスワード     |                       |
-| BERNER_ALERT_WEBHOOK_URL   | アラート通知用のWebhook  | logback.xmlを参照        |
+| BERNER_LOG_PATH | ログファイルの出力先 |                       |
