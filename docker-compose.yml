@@ -6,5 +6,18 @@ services:
       - berner-data:/var/lib/mysql
     ports:
       - 127.0.0.1:23306:3306
+  flyway:
+    image: flyway/flyway:10.13-alpine
+    volumes:
+      - ./db/migration:/flyway/sql
+    command: >
+      -url=jdbc:mariadb://mariadb:3306
+      -schemas=dev_berner
+      -connectRetries=60
+      -user=root
+      -password=
+      migrate
+    depends_on:
+      - mariadb
 volumes:
   berner-data:
