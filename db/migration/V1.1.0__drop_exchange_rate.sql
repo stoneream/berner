@@ -1,1 +1,1 @@
-drop table exchange_rate;
+drop table exchange_rates;
