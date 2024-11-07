@@ -13,9 +13,6 @@ lazy val baseSettings = Seq(
       url("https://github.com/stoneream")
     )
   ),
-  resolvers ++= Seq(
-    "slack-webhook-appender" at "https://raw.github.com/dwango/slack-webhook-appender/mvn-repo/"
-  ),
   // scala settings
   scalaVersion := "2.13.14",
   scalacOptions ++= Seq(
@@ -56,12 +53,10 @@ lazy val logging = (project in file("logging"))
   )
 
 lazy val bot = (project in file("bot"))
-  .enablePlugins(DockerPlugin, JavaAppPackaging)
   .settings(baseSettings)
   .settings(
     name := "berner-bot",
-    Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
     libraryDependencies ++= Dependencies.bot,
-    Universal / javaOptions ++= Seq("-Dpidfile.path=/dev/null")
+    fork := true,
   )
   .dependsOn(logging)
