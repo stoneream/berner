@@ -115,8 +115,17 @@ class Hub extends ListenerAdapter with Logger {
           val mentions = sourceMessage.getMentions
           val sanitizedContent = sanitizeContent(rawContent, mentions)
           val messageLink = sourceMessage.getJumpUrl
+
           // 添付画像
-          val urls = sourceMessage.getAttachments.asScala.map(_.getUrl).mkString("\n")
+          val urls = sourceMessage.getAttachments.asScala
+            .map { attachment =>
+              if (attachment.isSpoiler) {
+                s"||${attachment.getUrl}||"
+              } else {
+                attachment.getUrl
+              }
+            }
+            .mkString("\n")
 
           templating(sanitizedContent, messageLink, urls)
         }
