@@ -4,8 +4,8 @@ import berner.database.{HubMessageMappingReader, HubMessageMappingWriter}
 import berner.logging.Logger
 import berner.model.hub.HubMessageMapping
 import club.minnced.discord.webhook.external.JDAWebhookClient
-import club.minnced.discord.webhook.send.{WebhookEmbed, WebhookEmbedBuilder, WebhookMessageBuilder}
-import net.dv8tion.jda.api.entities.{Mentions, MessageEmbed}
+import club.minnced.discord.webhook.send.{WebhookEmbedBuilder, WebhookMessageBuilder}
+import net.dv8tion.jda.api.entities.Mentions
 import net.dv8tion.jda.api.entities.Message.Attachment
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel
