@@ -47,12 +47,13 @@ object Dependencies {
   val scalikejdbcVersion = "4.3.0"
   lazy val scalikejdbc: Seq[ModuleID] = Seq(
     "org.scalikejdbc" %% "scalikejdbc" % scalikejdbcVersion,
-    "org.scalikejdbc" %% "scalikejdbc-config" % scalikejdbcVersion
+    "org.scalikejdbc" %% "scalikejdbc-config" % scalikejdbcVersion,
+    "org.scalikejdbc" %% "scalikejdbc-syntax-support-macro" % scalikejdbcVersion
   )
 
   // discord
   lazy val jda: Seq[ModuleID] = Seq(
-    "net.dv8tion" % "JDA" % "5.0.1",
+    "net.dv8tion" % "JDA" % "5.2.1",
     "club.minnced" % "discord-webhooks" % "0.8.4"
   )
 

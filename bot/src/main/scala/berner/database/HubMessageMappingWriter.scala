@@ -4,40 +4,40 @@ import berner.model.hub.HubMessageMapping
 import scalikejdbc._
 
 import java.time.OffsetDateTime
+import scala.collection.IndexedSeq.iterableFactory
 
 object HubMessageMappingWriter {
-  def write(hmm: HubMessageMapping)(session: DBSession): Unit = {
+  private val column = HubMessageMapping.column
+
+  def write(rows: List[HubMessageMapping])(session: DBSession): Unit = {
     implicit val s: DBSession = session
-    sql"""
-      INSERT INTO hub_message_mappings (
-        guild_id,
-        source_guild_message_channel_id,
-        source_thread_message_channel_id,
-        source_message_id,
-        hub_guild_message_channel_id,
-        hub_message_id,
-        created_at,
-        updated_at,
-        deleted_at
-      ) VALUES (
-        ${hmm.guildId},
-        ${hmm.sourceGuildMessageChannelId},
-        ${hmm.sourceThreadMessageChannelId},
-        ${hmm.sourceMessageId},
-        ${hmm.hubGuildMessageChannelId},
-        ${hmm.hubMessageId},
-        ${hmm.createdAt},
-        ${hmm.updatedAt},
-        ${hmm.deletedAt}
-     )
-     """.update.apply()
+
+    val builder = BatchParamsBuilder {
+      rows.map { row =>
+        Seq(
+          column.guildId -> row.guildId,
+          column.sourceGuildMessageChannelId -> row.sourceGuildMessageChannelId,
+          column.sourceThreadMessageChannelId -> row.sourceThreadMessageChannelId,
+          column.sourceMessageId -> row.sourceMessageId,
+          column.hubGuildMessageChannelId -> row.hubGuildMessageChannelId,
+          column.hubMessageId -> row.hubMessageId,
+          column.createdAt -> row.createdAt,
+          column.updatedAt -> row.updatedAt,
+          column.deletedAt -> row.deletedAt
+        )
+      }
+    }
+
+    withSQL {
+      insert.into(HubMessageMapping).namedValues(builder.columnsAndPlaceholders: _*)
+    }.batch(builder.batchParams: _*).apply()
   }
 
   def delete(id: Long, now: OffsetDateTime)(session: DBSession): Unit = {
     implicit val s: DBSession = session
-    val hmm = HubMessageMappingSyntax.syntax("hmm")
+    val hmm = HubMessageMapping.syntax("hmm")
     withSQL {
-      update(HubMessageMappingSyntax as hmm)
+      update(HubMessageMapping as hmm)
         .set(
           hmm.deletedAt -> now,
           hmm.updatedAt -> now
