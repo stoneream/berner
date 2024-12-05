@@ -4,8 +4,9 @@ import berner.database.{HubMessageMappingReader, HubMessageMappingWriter}
 import berner.logging.Logger
 import berner.model.hub.HubMessageMapping
 import club.minnced.discord.webhook.external.JDAWebhookClient
-import club.minnced.discord.webhook.send.WebhookMessageBuilder
-import net.dv8tion.jda.api.entities.Mentions
+import club.minnced.discord.webhook.send.{WebhookEmbed, WebhookEmbedBuilder, WebhookMessageBuilder}
+import net.dv8tion.jda.api.entities.{Mentions, MessageEmbed}
+import net.dv8tion.jda.api.entities.Message.Attachment
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent
@@ -45,19 +46,42 @@ class Hub extends ListenerAdapter with Logger {
     sanitizedContent
   }
 
-  private def templating(sanitizedContent: String, messageLink: String, urls: String): String = {
+  private def templating(
+      sanitizedContent: String,
+      attachments: List[Attachment],
+      messageLink: String,
+      forwarded: Boolean = false
+  ): String = {
+    val urls = attachments
+      .map { attachment =>
+        // 添付画像のネタバレ防止を考慮
+        if (attachment.isSpoiler) {
+          s"||${attachment.getUrl}||"
+        } else {
+          attachment.getUrl
+        }
+      }
+      .mkString("\n")
+
+    val jumpLinkWithInfo =
+      if (forwarded) {
+        s"($messageLink, Forwarded)"
+      } else {
+        s"($messageLink)"
+      }
+
     if (urls.isEmpty) {
       // 画像添付がないケース
       s"""
          |$sanitizedContent
-         |($messageLink)
+         |$jumpLinkWithInfo
          |""".stripMargin
     } else {
       // 画像添付があるケース
       s"""
          |$sanitizedContent
          |$urls
-         |($messageLink)
+         |$jumpLinkWithInfo
          |""".stripMargin
     }
   }
@@ -110,31 +134,43 @@ class Hub extends ListenerAdapter with Logger {
 
           JDAWebhookClient.from(jdaWebHook)
         }
-        content = {
-          val rawContent = sourceMessage.getContentRaw
-          val mentions = sourceMessage.getMentions
-          val sanitizedContent = sanitizeContent(rawContent, mentions)
-          val messageLink = sourceMessage.getJumpUrl
-
-          // 添付画像
-          val urls = sourceMessage.getAttachments.asScala
-            .map { attachment =>
-              if (attachment.isSpoiler) {
-                s"||${attachment.getUrl}||"
-              } else {
-                attachment.getUrl
-              }
-            }
-            .mkString("\n")
-
-          templating(sanitizedContent, messageLink, urls)
-        }
         webhookMessage = {
-          new WebhookMessageBuilder()
-            .setContent(content)
-            .setUsername(sourceMessage.getAuthor.getName)
-            .setAvatarUrl(sourceMessage.getAuthor.getAvatarUrl)
-            .build()
+          val sourceAuthor = sourceMessage.getAuthor
+          sourceMessage.getMessageSnapshots.asScala.toList match {
+            case Nil => // 通常のメッセージ
+              val rawContent = sourceMessage.getContentRaw
+              val mentions = sourceMessage.getMentions
+              val sanitizedContent = sanitizeContent(rawContent, mentions)
+              val attachments = sourceMessage.getAttachments.asScala
+              val content = templating(sanitizedContent, attachments.toList, sourceMessage.getJumpUrl)
+
+              new WebhookMessageBuilder()
+                .setContent(content)
+                .setUsername(sourceAuthor.getName)
+                .setAvatarUrl(sourceAuthor.getAvatarUrl)
+                .build()
+            case head :: _ => // 転送されたメッセージ
+              val rawContent = head.getContentRaw
+              val mentions = head.getMentions
+              val sanitizedContent = sanitizeContent(rawContent, mentions)
+              val attachments = head.getAttachments.asScala
+              val content = templating(
+                sanitizedContent,
+                attachments.toList,
+                sourceMessage.getJumpUrl,
+                true
+              )
+              val embeds = head.getEmbeds.asScala.map { embed =>
+                WebhookEmbedBuilder.fromJDA(embed).build()
+              }.asJava
+
+              new WebhookMessageBuilder()
+                .setContent(content)
+                .setUsername(sourceAuthor.getName)
+                .setAvatarUrl(sourceAuthor.getAvatarUrl)
+                .addEmbeds(embeds)
+                .build()
+          }
         }
       } yield {
         allCatch.either(webhook.send(webhookMessage).get()) match {
@@ -196,25 +232,14 @@ class Hub extends ListenerAdapter with Logger {
             .map { jdaWebHook => JDAWebhookClient.from(jdaWebHook) }
             .getOrElse(throw new RuntimeException("webhook not found"))
         }
-        content = {
+        webhookMessage = {
           val rawContent = sourceMessage.getContentRaw
           val mentions = sourceMessage.getMentions
           val sanitizedContent = sanitizeContent(rawContent, mentions)
           val messageLink = sourceMessage.getJumpUrl
-          // 画像添付があるケース
-          val urls = sourceMessage.getAttachments.asScala
-            .map { attachment =>
-              if (attachment.isSpoiler) {
-                s"||${attachment.getUrl}||"
-              } else {
-                attachment.getUrl
-              }
-            }
-            .mkString("\n")
+          val attachments = sourceMessage.getAttachments.asScala.toList
+          val content = templating(sanitizedContent, attachments, messageLink)
 
-          templating(sanitizedContent, messageLink, urls)
-        }
-        webhookMessage = {
           new WebhookMessageBuilder()
             .setContent(content)
             .setUsername(sourceMessage.getAuthor.getName)
