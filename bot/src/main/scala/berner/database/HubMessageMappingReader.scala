@@ -4,6 +4,7 @@ import berner.model.hub.HubMessageMapping
 import scalikejdbc._
 
 object HubMessageMappingReader {
+  private val hmm = HubMessageMapping.syntax("hmm")
 
   def findForUpdate(
       sourceGuildMessageChannelId: String,
@@ -12,10 +13,9 @@ object HubMessageMappingReader {
       guildId: String
   )(session: DBSession): Option[HubMessageMapping] = {
     implicit val s: DBSession = session
-    val hmm = HubMessageMappingSyntax.syntax("hmm")
 
     withSQL {
-      selectFrom(HubMessageMappingSyntax as hmm).where
+      selectFrom(HubMessageMapping as hmm).where
         .eq(hmm.guildId, guildId)
         .and
         .eq(hmm.sourceGuildMessageChannelId, sourceGuildMessageChannelId)
@@ -26,7 +26,7 @@ object HubMessageMappingReader {
         .and
         .isNull(hmm.deletedAt)
         .forUpdate
-    }.map(HubMessageMappingSyntax(hmm.resultName)).single.apply()
+    }.map(HubMessageMapping(hmm.resultName)).single.apply()
   }
 
   def find(
@@ -36,10 +36,9 @@ object HubMessageMappingReader {
       guildId: String
   )(session: DBSession): Option[HubMessageMapping] = {
     implicit val s: DBSession = session
-    val hmm = HubMessageMappingSyntax.syntax("hmm")
 
     withSQL {
-      selectFrom(HubMessageMappingSyntax as hmm).where
+      selectFrom(HubMessageMapping as hmm).where
         .eq(hmm.guildId, guildId)
         .and
         .eq(hmm.sourceGuildMessageChannelId, sourceGuildMessageChannelId)
@@ -49,7 +48,7 @@ object HubMessageMappingReader {
         .eq(hmm.sourceMessageId, sourceMessageId)
         .and
         .isNull(hmm.deletedAt)
-    }.map(HubMessageMappingSyntax(hmm.resultName)).single.apply()
+    }.map(HubMessageMapping(hmm.resultName)).single.apply()
   }
 
   def find(
@@ -57,16 +56,15 @@ object HubMessageMappingReader {
       guildId: String
   )(session: DBSession): List[HubMessageMapping] = {
     implicit val s: DBSession = session
-    val hmm = HubMessageMappingSyntax.syntax("hmm")
 
     withSQL {
-      selectFrom(HubMessageMappingSyntax as hmm).where
+      selectFrom(HubMessageMapping as hmm).where
         .eq(hmm.guildId, guildId)
         .and
         .eq(hmm.sourceGuildMessageChannelId, sourceGuildMessageChannelId)
         .and
         .isNull(hmm.deletedAt)
-    }.map(HubMessageMappingSyntax(hmm.resultName)).list.apply()
+    }.map(HubMessageMapping(hmm.resultName)).list.apply()
   }
 
   def find(
@@ -75,10 +73,9 @@ object HubMessageMappingReader {
       guildId: String
   )(session: DBSession): List[HubMessageMapping] = {
     implicit val s: DBSession = session
-    val hmm = HubMessageMappingSyntax.syntax("hmm")
 
     withSQL {
-      selectFrom(HubMessageMappingSyntax as hmm).where
+      selectFrom(HubMessageMapping as hmm).where
         .eq(hmm.guildId, guildId)
         .and
         .eq(hmm.sourceGuildMessageChannelId, sourceGuildMessageChannelId)
@@ -86,7 +83,7 @@ object HubMessageMappingReader {
         .eq(hmm.sourceThreadMessageChannelId, sourceThreadMessageChannelId)
         .and
         .isNull(hmm.deletedAt)
-    }.map(HubMessageMappingSyntax(hmm.resultName)).list.apply()
+    }.map(HubMessageMapping(hmm.resultName)).list.apply()
   }
 
 }

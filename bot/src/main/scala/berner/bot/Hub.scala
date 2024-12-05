@@ -143,17 +143,19 @@ class Hub extends ListenerAdapter with Logger {
             val now = OffsetDateTime.now()
             DB localTx { session =>
               HubMessageMappingWriter.write(
-                HubMessageMapping(
-                  id = 0,
-                  guildId = sourceGuild.getId,
-                  sourceGuildMessageChannelId = guildMessageChannel.getId,
-                  sourceThreadMessageChannelId = threadChannelOpt.map(_.getId),
-                  sourceMessageId = sourceMessage.getId,
-                  hubGuildMessageChannelId = hubChannel.getId,
-                  hubMessageId = hubMessage.getId.toString,
-                  createdAt = now,
-                  updatedAt = now,
-                  deletedAt = None
+                List(
+                  HubMessageMapping(
+                    id = 0,
+                    guildId = sourceGuild.getId,
+                    sourceGuildMessageChannelId = guildMessageChannel.getId,
+                    sourceThreadMessageChannelId = threadChannelOpt.map(_.getId),
+                    sourceMessageId = sourceMessage.getId,
+                    hubGuildMessageChannelId = hubChannel.getId,
+                    hubMessageId = hubMessage.getId.toString,
+                    createdAt = now,
+                    updatedAt = now,
+                    deletedAt = None
+                  )
                 )
               )(session)
             }
