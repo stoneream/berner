@@ -3,6 +3,7 @@ import sbt._
 object Dependencies {
 
   lazy val bot: Seq[sbt.ModuleID] = Seq(
+    catsIO,
     jda,
     scalikejdbc,
     mariadb,
@@ -55,6 +56,10 @@ object Dependencies {
   lazy val jda: Seq[ModuleID] = Seq(
     "net.dv8tion" % "JDA" % "5.2.1",
     "club.minnced" % "discord-webhooks" % "0.8.4"
+  )
+
+  lazy val catsIO: Seq[ModuleID] = Seq(
+    "org.typelevel" %% "cats-effect" % "3.5.7"
   )
 
   lazy val zip4j: Seq[ModuleID] = Seq(
