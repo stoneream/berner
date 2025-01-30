@@ -1,8 +1,8 @@
 package berner.bot
 
-import berner.database.{HubMessageMappingReader, HubMessageMappingWriter}
+import berner.database.{HubMessageDeleteQueueWriter, HubMessageMappingReader, HubMessageMappingWriter}
 import berner.logging.Logger
-import berner.model.hub.HubMessageMapping
+import berner.model.hub.{HubMessageDeleteQueue, HubMessageMapping}
 import club.minnced.discord.webhook.external.JDAWebhookClient
 import club.minnced.discord.webhook.send.{WebhookEmbedBuilder, WebhookMessageBuilder}
 import net.dv8tion.jda.api.entities.Mentions
@@ -261,35 +261,29 @@ class Hub extends ListenerAdapter with Logger {
 
     for {
       hmm <- DB.readOnly { session =>
-        HubMessageMappingReader.findForUpdate(
+        HubMessageMappingReader.find(
           sourceGuildMessageChannelId = guildMessageChannel.getId,
           sourceThreadMessageChannelId = threadChannelOpt.map(_.getId),
           sourceMessageId = event.getMessageId,
           guildId = sourceGuild.getId
         )(session)
       }
-      category <- extractCategoryName(guildMessageChannel.getName)
-      webhookClient <- allCatch.opt {
-        // webhookの解決
-        val webhooks = event.getGuild.retrieveWebhooks().complete().asScala
-        val webhookName = s"berner-hub-${category}"
-        webhooks
-          .find { webhook =>
-            webhook.getChannel.getId == hmm.hubGuildMessageChannelId &&
-            webhook.getName == webhookName
-          }
-          .map { jdaWebHook => JDAWebhookClient.from(jdaWebHook) }
-          .getOrElse(throw new RuntimeException("webhook not found"))
-      }
     } yield {
-      allCatch.either(webhookClient.delete(hmm.hubMessageId).get()) match {
-        case Left(e) => warn("メッセージの削除に失敗しました", e) // TODO 消し漏らしを検知 & 削除する仕組みがほしい
-        case Right(_) =>
-          DB.localTx { session =>
-            val now = OffsetDateTime.now()
-            HubMessageMappingWriter.delete(hmm.id, now)(session)
-          }
+      val now = OffsetDateTime.now()
+      val row = HubMessageDeleteQueue(
+        id = 0,
+        hubMessageMappingId = hmm.id,
+        status = 0, // pending
+        createdAt = now,
+        updatedAt = now,
+        deletedAt = None
+      )
+
+      DB.localTx { session =>
+        HubMessageDeleteQueueWriter.write(row :: Nil)(session)
       }
+
+      info("メッセージの削除をキューイングしました。(hub_message_mapping_reader#id: %d)".format(hmm.id))
     }
   }
 
@@ -309,43 +303,41 @@ class Hub extends ListenerAdapter with Logger {
       }
     }
 
-    for {
-      category <- extractCategoryName(guildMessageChannel.getName)
-      hubMessageMappings = threadChannelOpt.fold {
-        // チャンネルを消した場合は直下のスレッドも対象
-        DB.readOnly { session =>
-          HubMessageMappingReader.find(
-            sourceGuildMessageChannelId = guildMessageChannel.getId,
-            guildId = sourceGuild.getId
-          )(session)
-        }
-      } { threadChannel =>
-        // スレッドを消した場合はスレッドのみ
-        DB.readOnly { session =>
-          HubMessageMappingReader.find(
-            sourceGuildMessageChannelId = guildMessageChannel.getId,
-            sourceThreadMessageChannelId = threadChannel.getId,
-            guildId = sourceGuild.getId
-          )(session)
-        }
+    val hubMessageMappings = threadChannelOpt.fold {
+      // チャンネルを消した場合は直下のスレッドも対象
+      DB.readOnly { session =>
+        HubMessageMappingReader.find(
+          sourceGuildMessageChannelId = guildMessageChannel.getId,
+          guildId = sourceGuild.getId
+        )(session)
       }
-      hubChannel <- sourceGuild.getTextChannelsByName(s"hub-$category", true).asScala.headOption
-    } yield {
-      hubMessageMappings.foreach { hmm =>
-        // 途中で例外が起きるとループが落ちる
-        // 例外をキャッチして処理を続行する
-        allCatch.either {
-          val id = hmm.hubMessageId
-
-          hubChannel.deleteMessageById(id).complete()
-
-          val now = OffsetDateTime.now()
-          DB localTx { session => HubMessageMappingWriter.delete(hmm.id, now)(session) }
-        } match {
-          case Left(e) => warn("メッセージの削除に失敗しました", e)
-          case Right(_) => // do nothing
-        }
+    } { threadChannel =>
+      // スレッドを消した場合はスレッドのみ
+      DB.readOnly { session =>
+        HubMessageMappingReader.find(
+          sourceGuildMessageChannelId = guildMessageChannel.getId,
+          sourceThreadMessageChannelId = threadChannel.getId,
+          guildId = sourceGuild.getId
+        )(session)
       }
     }
+
+    val now = OffsetDateTime.now()
+    val hmdq = hubMessageMappings.map { hmm =>
+      HubMessageDeleteQueue(
+        id = 0,
+        hubMessageMappingId = hmm.id,
+        status = 0, // pending
+        createdAt = now,
+        updatedAt = now,
+        deletedAt = None
+      )
+    }
+
+    DB.readOnly { session =>
+      HubMessageDeleteQueueWriter.write(hmdq)(session)
+    }
+
+    info("メッセージの削除をキューイングしました。(hub_message_mapping_reader#id: %s)".format(hubMessageMappings.map(_.id).mkString(", ")))
   }
 }
