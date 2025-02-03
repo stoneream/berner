@@ -8,6 +8,7 @@
     </appender>
 
     <appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${BERNER_LOG_PATH}/berner.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${BERNER_LOG_PATH}/berner-%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
