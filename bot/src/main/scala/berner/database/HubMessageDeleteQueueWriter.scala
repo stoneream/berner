@@ -1,6 +1,6 @@
 package berner.database
 
-import berner.model.hub.{HubMessageDeleteQueue, HubMessageMapping}
+import berner.model.hub.HubMessageDeleteQueue
 import scalikejdbc._
 
 import java.time.OffsetDateTime
@@ -25,7 +25,7 @@ object HubMessageDeleteQueueWriter {
     }
 
     withSQL {
-      insert.into(HubMessageMapping).namedValues(builder.columnsAndPlaceholders: _*)
+      insert.into(HubMessageDeleteQueue).namedValues(builder.columnsAndPlaceholders: _*)
     }.batch(builder.batchParams: _*).apply()
   }
 
@@ -34,8 +34,10 @@ object HubMessageDeleteQueueWriter {
 
     withSQL {
       update(HubMessageDeleteQueue)
-        .set(column.status -> 1) // 削除済み
-        .set(column.updatedAt -> now)
+        .set(
+          column.status -> 1, // 削除済み
+          column.updatedAt -> now
+        )
         .where
         .in(column.id, ids)
     }.update.apply()
@@ -46,8 +48,10 @@ object HubMessageDeleteQueueWriter {
 
     withSQL {
       update(HubMessageDeleteQueue)
-        .set(column.status -> 2) // 削除失敗
-        .set(column.updatedAt -> now)
+        .set(
+          column.status -> 2, // 削除失敗
+          column.updatedAt -> now
+        )
         .where
         .in(column.id, ids)
     }.update.apply()

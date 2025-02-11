@@ -10,12 +10,12 @@ object HubMessageDeleteQueueReader {
   def pendings(limit: Int)(session: DBSession): List[(HubMessageDeleteQueue, HubMessageMapping)] = {
     implicit val s: DBSession = session
     withSQL {
-      select(hmdq.*, hmm.*)
+      select
         .from(HubMessageDeleteQueue as hmdq)
         .join(HubMessageMapping as hmm)
         .on(sqls.eq(hmdq.hubMessageMappingId, hmm.id).and.isNull(hmm.deletedAt))
         .where
-        .eq(hmdq.status, 1)
+        .eq(hmdq.status, 0) // 削除待ち
         .and
         .eq(hmdq.deletedAt, null)
         .limit(limit)

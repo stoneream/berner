@@ -334,7 +334,7 @@ class Hub extends ListenerAdapter with Logger {
       )
     }
 
-    DB.readOnly { session =>
+    DB.localTx { session =>
       HubMessageDeleteQueueWriter.write(hmdq)(session)
     }
 
