@@ -66,6 +66,10 @@ object Dependencies {
     "net.lingala.zip4j" % "zip4j" % "2.11.5"
   )
 
+  lazy val catsIO: Seq[ModuleID] = Seq(
+    "org.typelevel" %% "cats-effect" % "3.5.7"
+  )
+
   // test
   lazy val test: Seq[sbt.ModuleID] = scalatest
 

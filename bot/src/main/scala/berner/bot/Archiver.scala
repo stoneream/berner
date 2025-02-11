@@ -1,10 +1,10 @@
 package berner.bot
 
+import berner.bot.Archiver.slashCommandName
 import io.circe._
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.entities.channel.middleman.{GuildMessageChannel, MessageChannel}
-import net.dv8tion.jda.api.events.guild.GuildReadyEvent
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
@@ -24,7 +24,6 @@ import scala.jdk.CollectionConverters._
 import scala.util.control.Exception.allCatch
 
 class Archiver extends ListenerAdapter {
-  private val slashCommandName = "archiver"
   private val modalCustomId = "berner-archiver"
   private val modalZipPassword = "zip-password"
 
@@ -41,13 +40,9 @@ class Archiver extends ListenerAdapter {
     }
   }
 
-  override def onGuildReady(event: GuildReadyEvent): Unit = {
-    event.getGuild.upsertCommand(slashCommandName, "Archive").queue()
-  }
-
   override def onSlashCommandInteraction(event: SlashCommandInteractionEvent): Unit = {
     if (event.getName != slashCommandName) {
-      event.deferReply().queue()
+      // do nothing
     } else {
       val downloadPassword = TextInput
         .create(modalZipPassword, "Zip Password", TextInputStyle.SHORT)
@@ -168,4 +163,9 @@ class Archiver extends ListenerAdapter {
         }
     }
   }
+}
+
+object Archiver {
+  val slashCommandName = "archiver"
+  val slashCommandDescription = "Archive Channel Messages"
 }
