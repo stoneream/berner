@@ -1,6 +1,6 @@
 package berner.bot
 
-import berner.daemon.HubDaemon
+import berner.daemon.hub_daemon.HubDaemon
 import cats.effect.{ExitCode, IO, IOApp}
 import com.typesafe.config.ConfigFactory
 import scalikejdbc.config.DBs

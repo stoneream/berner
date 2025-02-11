@@ -1,4 +1,4 @@
-package berner.daemon
+package berner.daemon.hub_daemon
 
 import berner.bot.{Archiver, Hub, Ping}
 import cats.effect.IO
