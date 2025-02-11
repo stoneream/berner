@@ -2,6 +2,7 @@ package berner.daemon
 
 import berner.bot.{Archiver, Hub, Ping}
 import cats.effect.IO
+import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.{JDA, JDABuilder}
 
@@ -28,6 +29,13 @@ object HubDaemon {
 
   private def execute(jda: JDA): IO[Boolean] = {
     IO {
+      jda
+        .updateCommands()
+        .addCommands(
+          Commands.slash(Archiver.slashCommandName, Archiver.slashCommandDescription).setGuildOnly(true)
+        )
+        .queue()
+
       jda.awaitShutdown()
     }.guarantee(IO {
       val client = jda.getHttpClient
