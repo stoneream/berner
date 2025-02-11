@@ -58,10 +58,6 @@ object Dependencies {
     "club.minnced" % "discord-webhooks" % "0.8.4"
   )
 
-  lazy val catsIO: Seq[ModuleID] = Seq(
-    "org.typelevel" %% "cats-effect" % "3.5.7"
-  )
-
   lazy val zip4j: Seq[ModuleID] = Seq(
     "net.lingala.zip4j" % "zip4j" % "2.11.5"
   )
