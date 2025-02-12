@@ -1,6 +1,6 @@
 package berner.feature.archiver
 
-import Archiver.slashCommandName
+import ArchiverListenerAdapter.slashCommandName
 import io.circe._
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
@@ -23,7 +23,7 @@ import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
 import scala.util.control.Exception.allCatch
 
-class Archiver extends ListenerAdapter {
+class ArchiverListenerAdapter extends ListenerAdapter {
   private val modalCustomId = "berner-archiver"
   private val modalZipPassword = "zip-password"
 
@@ -165,7 +165,7 @@ class Archiver extends ListenerAdapter {
   }
 }
 
-object Archiver {
+object ArchiverListenerAdapter {
   val slashCommandName = "archiver"
   val slashCommandDescription = "Archive Channel Messages"
 }

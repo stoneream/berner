@@ -18,7 +18,7 @@ import java.time.OffsetDateTime
 import scala.jdk.CollectionConverters._
 import scala.util.control.Exception._
 
-class Hub extends ListenerAdapter with Logger {
+class HubListenerAdapter extends ListenerAdapter with Logger {
 
   private def sanitizeContent(rawContent: String, mentions: Mentions): String = {
     val mentionedUser = mentions.getUsers.asScala.toList
