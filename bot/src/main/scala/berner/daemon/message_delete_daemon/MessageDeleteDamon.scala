@@ -4,11 +4,11 @@ import berner.database.{HubMessageDeleteQueueReader, HubMessageDeleteQueueWriter
 import berner.logging.Logger
 import cats.effect.IO
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
-import net.dv8tion.jda.api.entities.channel.middleman.{GuildChannel, GuildMessageChannel, MessageChannel}
 import net.dv8tion.jda.api.{JDA, JDABuilder}
 import scalikejdbc.DB
 
 import java.time.OffsetDateTime
+import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.util.control.Exception.allCatch
 
@@ -16,7 +16,7 @@ object MessageDeleteDamon extends Logger {
   def task(discordBotToken: String): IO[Unit] = {
     (for {
       jda <- preExecute(discordBotToken)
-      _ <- execute(jda).foreverM // クライアントを何度も初期化するのが無駄なのでforeverMでループ
+      _ <- execute(jda)
       _ <- postExecute()
     } yield ()).foreverM
   }
@@ -28,7 +28,7 @@ object MessageDeleteDamon extends Logger {
   }
 
   private def execute(jda: JDA): IO[Unit] = {
-    IO {
+    (IO {
       // 100件ずつ取得して削除
       val rows = DB.localTx { s => HubMessageDeleteQueueReader.pendings(limit = 100)(s) }
 
@@ -75,7 +75,7 @@ object MessageDeleteDamon extends Logger {
           }
         }
       }
-    }.guarantee(IO {
+    } *> IO.sleep(5.second)).foreverM.guarantee(IO {
       val client = jda.getHttpClient
       client.connectionPool.evictAll()
       client.dispatcher.executorService.shutdown()
