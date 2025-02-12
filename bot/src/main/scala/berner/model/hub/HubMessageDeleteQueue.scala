@@ -14,7 +14,7 @@ case class HubMessageDeleteQueue(
 )
 
 object HubMessageDeleteQueue extends SQLSyntaxSupport[HubMessageDeleteQueue] {
-  override def tableName: String = "hub_message_delete_queue"
+  override def tableName: String = "hub_message_delete_queue" // todo 複数形に変更する
 
   def apply(rn: ResultName[HubMessageDeleteQueue])(rs: WrappedResultSet): HubMessageDeleteQueue = autoConstruct(rs, rn)
 }

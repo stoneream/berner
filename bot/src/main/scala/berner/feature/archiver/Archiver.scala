@@ -1,6 +1,6 @@
-package berner.bot
+package berner.feature.archiver
 
-import berner.bot.Archiver.slashCommandName
+import Archiver.slashCommandName
 import io.circe._
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel

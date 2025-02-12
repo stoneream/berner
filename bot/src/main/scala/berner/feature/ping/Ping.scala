@@ -1,4 +1,4 @@
-package berner.bot
+package berner.feature.ping
 
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter

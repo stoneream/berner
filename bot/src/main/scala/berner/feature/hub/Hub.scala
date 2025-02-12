@@ -1,4 +1,4 @@
-package berner.bot
+package berner.feature.hub
 
 import berner.database.{HubMessageDeleteQueueWriter, HubMessageMappingReader, HubMessageMappingWriter}
 import berner.logging.Logger

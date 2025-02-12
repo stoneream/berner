@@ -1,6 +1,8 @@
 package berner.daemon.hub_daemon
 
-import berner.bot.{Archiver, Hub, Ping}
+import berner.feature.archiver.Archiver
+import berner.feature.archiver.hub.Hub
+import berner.feature.ping.Ping
 import cats.effect.IO
 import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.requests.GatewayIntent
