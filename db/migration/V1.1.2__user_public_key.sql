@@ -1,4 +1,4 @@
-create table user_public_key(
+create table user_public_keys(
   id serial primary key,
   user_id varchar(255) not null,
   key_pem TEXT NOT NULL,
