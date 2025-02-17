@@ -75,11 +75,7 @@ object MessageDeleteDamon extends Logger {
           }
         }
       }
-    } *> IO.sleep(5.second)).foreverM.guarantee(IO {
-      val client = jda.getHttpClient
-      client.connectionPool.evictAll()
-      client.dispatcher.executorService.shutdown()
-    })
+    } *> IO.sleep(5.second)).foreverM
   }
 
   private def postExecute(): IO[Unit] = IO {}
