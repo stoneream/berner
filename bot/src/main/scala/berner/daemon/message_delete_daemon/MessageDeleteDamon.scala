@@ -1,7 +1,9 @@
 package berner.daemon.message_delete_daemon
 
-import berner.database.{HubMessageDeleteQueueReader, HubMessageDeleteQueueWriter}
+import berner.database.reader.HubMessageDeleteQueueReader
+import berner.database.writer.HubMessageDeleteQueueWriter
 import berner.logging.Logger
+import berner.model.config.BernerConfig
 import cats.effect.IO
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.{JDA, JDABuilder}
@@ -9,13 +11,12 @@ import scalikejdbc.DB
 
 import java.time.OffsetDateTime
 import scala.concurrent.duration.DurationInt
-import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.util.control.Exception.allCatch
 
 object MessageDeleteDamon extends Logger {
-  def task(discordBotToken: String): IO[Unit] = {
+  def task(config: BernerConfig): IO[Unit] = {
     (for {
-      jda <- preExecute(discordBotToken)
+      jda <- preExecute(config.discord.token)
       _ <- execute(jda)
       _ <- postExecute()
     } yield ()).foreverM

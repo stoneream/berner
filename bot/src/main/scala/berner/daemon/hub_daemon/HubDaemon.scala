@@ -1,15 +1,16 @@
 package berner.daemon.hub_daemon
 
 import berner.bot.{Archiver, Hub, Ping}
+import berner.model.config.BernerConfig
 import cats.effect.IO
 import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.{JDA, JDABuilder}
 
 object HubDaemon {
-  def task(discordBotToken: String): IO[Unit] = {
+  def task(bernerConfig: BernerConfig): IO[Unit] = {
     (for {
-      jda <- preExecute(discordBotToken)
+      jda <- preExecute(bernerConfig.discord.token)
       _ <- execute(jda)
       _ <- postExecute()
     } yield ()).foreverM

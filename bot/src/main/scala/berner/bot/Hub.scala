@@ -1,6 +1,7 @@
 package berner.bot
 
-import berner.database.{HubMessageDeleteQueueWriter, HubMessageMappingReader, HubMessageMappingWriter}
+import berner.database.reader.HubMessageMappingReader
+import berner.database.writer.{HubMessageDeleteQueueWriter, HubMessageMappingWriter}
 import berner.logging.Logger
 import berner.model.hub.{HubMessageDeleteQueue, HubMessageMapping}
 import club.minnced.discord.webhook.external.JDAWebhookClient

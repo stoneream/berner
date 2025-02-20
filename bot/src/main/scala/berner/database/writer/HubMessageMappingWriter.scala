@@ -1,4 +1,4 @@
-package berner.database
+package berner.database.writer
 
 import berner.model.hub.HubMessageMapping
 import scalikejdbc._

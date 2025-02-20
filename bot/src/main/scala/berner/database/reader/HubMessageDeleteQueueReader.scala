@@ -1,4 +1,4 @@
-package berner.database
+package berner.database.reader
 
 import berner.model.hub.{HubMessageDeleteQueue, HubMessageMapping}
 import scalikejdbc._
