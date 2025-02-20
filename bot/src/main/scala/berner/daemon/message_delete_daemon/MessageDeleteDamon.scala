@@ -36,7 +36,10 @@ object MessageDeleteDamon extends Logger {
       if (rows.isEmpty) {
         // do nothing
       } else {
-        info(s"削除対象のメッセージを取得しました。(${rows.size})")
+        logger.info(
+          s"削除対象のメッセージを取得しました。({})",
+          kv("count", rows.size)
+        )
 
         val groupedRows = rows
           .groupBy { case (_, hmm) => hmm.guildId } // サーバーごとにグルーピング
@@ -59,7 +62,7 @@ object MessageDeleteDamon extends Logger {
               }
             } match { // 削除結果に応じてDBのステータスを更新
               case Left(e) =>
-                error("メッセージの削除中にエラーが発生しました", e)
+                logger.error("メッセージの削除中にエラーが発生しました", e)
                 val now = OffsetDateTime.now()
                 DB.localTx { s =>
                   HubMessageDeleteQueueWriter.markFailedByMessageIds(queueIds, now)(s)

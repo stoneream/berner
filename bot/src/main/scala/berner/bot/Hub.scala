@@ -156,10 +156,10 @@ class Hub extends ListenerAdapter with Logger {
               val sanitizedContent = sanitizeContent(rawContent, mentions)
               val attachments = head.getAttachments.asScala
               val content = templating(
-                sanitizedContent,
-                attachments.toList,
-                sourceMessage.getJumpUrl,
-                true
+                sanitizedContent = sanitizedContent,
+                attachments = attachments.toList,
+                messageLink = sourceMessage.getJumpUrl,
+                forwarded = true
               )
               val embeds = head.getEmbeds.asScala.map { embed =>
                 WebhookEmbedBuilder.fromJDA(embed).build()
@@ -196,7 +196,7 @@ class Hub extends ListenerAdapter with Logger {
                 )
               )(session)
             }
-          case Left(e) => warn("メッセージの送信に失敗しました", e)
+          case Left(e) => logger.warn("メッセージの送信に失敗しました", e)
         }
       }
     }
@@ -249,7 +249,7 @@ class Hub extends ListenerAdapter with Logger {
         }
       } yield {
         allCatch.either(webhookClient.edit(hmm.hubMessageId, webhookMessage).get()) match {
-          case Left(e) => warn("メッセージの編集に失敗しました", e)
+          case Left(e) => logger.warn("メッセージの編集に失敗しました。", e)
           case Right(_) => // do nothing
         }
       }
@@ -284,7 +284,10 @@ class Hub extends ListenerAdapter with Logger {
         HubMessageDeleteQueueWriter.write(row :: Nil)(session)
       }
 
-      info("メッセージの削除をキューイングしました。(hub_message_mapping_reader#id: %d)".format(hmm.id))
+      logger.info(
+        "メッセージの削除をキューイングしました。({})",
+        kv("hub_message_mapping_id", hmm.id)
+      )
     }
   }
 
@@ -295,7 +298,7 @@ class Hub extends ListenerAdapter with Logger {
 
       allCatch.either(eventSourceChannel.asThreadChannel()) match {
         case Left(value) =>
-          warn("チャンネルもしくはスレッドが見つかりませんでした", value)
+          logger.warn("チャンネルもしくはスレッドが見つかりませんでした。", value)
           (eventSourceChannel.asGuildMessageChannel(), None)
         case Right(threadChannel) =>
           // スレッドの場合は親チャンネルを解決
@@ -339,6 +342,9 @@ class Hub extends ListenerAdapter with Logger {
       HubMessageDeleteQueueWriter.write(hmdq)(session)
     }
 
-    info("メッセージの削除をキューイングしました。(hub_message_mapping_reader#id: %s)".format(hubMessageMappings.map(_.id).mkString(", ")))
+    logger.info(
+      "メッセージの削除をキューイングしました。({})",
+      kv("hub_message_mapping_ids", hubMessageMappings.map(_.id))
+    )
   }
 }
