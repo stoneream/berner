@@ -24,9 +24,7 @@ object MessageDeleteDamon extends Logger {
 
   private def execute(discordBotToken: String): IO[Unit] = {
     (IO {
-      val jda = JDABuilder
-        .createDefault(discordBotToken)
-        .build()
+      val jda = JDABuilder.createDefault(discordBotToken).build()
 
       // 100件ずつ取得して削除
       val rows = DB.localTx { s => HubMessageDeleteQueueReader.pendings(limit = 100)(s) }
@@ -71,7 +69,7 @@ object MessageDeleteDamon extends Logger {
           }
         }
       }
-    } *> IO.sleep(5.second)).foreverM
+    } *> IO.sleep(5.second)).replicateA_(360)
   }
 
   private def postExecute(): IO[Unit] = IO {}
