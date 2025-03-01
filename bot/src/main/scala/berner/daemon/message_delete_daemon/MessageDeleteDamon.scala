@@ -55,12 +55,13 @@ object MessageDeleteDamon extends Logger {
               }
             } match { // 削除結果に応じてDBのステータスを更新
               case Left(e) =>
-                error("メッセージの削除中にエラーが発生しました", e)
+                error(s"メッセージの削除中にエラーが発生しました。${messageIds.size}", e)
                 val now = OffsetDateTime.now()
                 DB.localTx { s =>
                   HubMessageDeleteQueueWriter.markFailedByMessageIds(queueIds, now)(s)
                 }
               case Right(_) =>
+                info(s"メッセージを削除しました。(${messageIds.size})")
                 val now = OffsetDateTime.now()
                 DB.localTx { s =>
                   HubMessageDeleteQueueWriter.markDeleteByMessageIds(queueIds, now)(s)
