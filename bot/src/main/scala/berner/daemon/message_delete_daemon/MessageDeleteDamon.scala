@@ -4,7 +4,7 @@ import berner.database.{HubMessageDeleteQueueReader, HubMessageDeleteQueueWriter
 import berner.logging.Logger
 import cats.effect.IO
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
-import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.{JDA, JDABuilder}
 import scalikejdbc.DB
 
 import java.time.OffsetDateTime
@@ -14,18 +14,18 @@ import scala.util.control.Exception.allCatch
 object MessageDeleteDamon extends Logger {
   def task(discordBotToken: String): IO[Unit] = {
     (for {
-      _ <- preExecute()
-      _ <- execute(discordBotToken)
+      jda <- preExecute(discordBotToken)
+      _ <- execute(jda)
       _ <- postExecute()
     } yield ()).foreverM
   }
 
-  private def preExecute(): IO[Unit] = IO.unit
+  private def preExecute(discordBotToken: String): IO[JDA] = IO {
+    JDABuilder.createDefault(discordBotToken).build().awaitReady()
+  }
 
-  private def execute(discordBotToken: String): IO[Unit] = {
-    (IO {
-      val jda = JDABuilder.createDefault(discordBotToken).build()
-
+  private def execute(jda: JDA): IO[Unit] = {
+    val deleteTask = IO {
       // 100件ずつ取得して削除
       val rows = DB.localTx { s => HubMessageDeleteQueueReader.pendings(limit = 100)(s) }
 
@@ -70,7 +70,10 @@ object MessageDeleteDamon extends Logger {
           }
         }
       }
-    } *> IO.sleep(5.second)).replicateA_(360)
+    }
+    val waitTask = IO.sleep(5.seconds)
+
+    (deleteTask *> waitTask).foreverM
   }
 
   private def postExecute(): IO[Unit] = IO {}
