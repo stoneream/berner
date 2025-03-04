@@ -1,17 +1,11 @@
 package berner.logging
 
+import net.logstash.logback.argument.{StructuredArgument, StructuredArguments}
+import org.slf4j
 import org.slf4j.LoggerFactory
 
 trait Logger {
-  private val logger = LoggerFactory.getLogger(getClass)
+  protected val logger: slf4j.Logger = LoggerFactory.getLogger(getClass)
 
-  def debug(message: String): Unit = logger.debug(message)
-
-  def info(message: String): Unit = logger.info(message)
-
-  def warn(message: String): Unit = logger.warn(message)
-
-  def warn(message: String, t: Throwable): Unit = logger.warn(message, t)
-
-  def error(message: String, t: Throwable): Unit = logger.error(message, t)
+  protected val kv: (String, Any) => StructuredArgument = StructuredArguments.kv(_: String, _: Any)
 }
