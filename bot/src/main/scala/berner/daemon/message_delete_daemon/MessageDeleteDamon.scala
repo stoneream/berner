@@ -17,7 +17,7 @@ object MessageDeleteDamon extends Logger {
       jda <- preExecute(discordBotToken)
       _ <- execute(jda)
       _ <- postExecute()
-    } yield task(discordBotToken)
+    } yield ()
   }
 
   private def preExecute(discordBotToken: String): IO[JDA] = IO {
