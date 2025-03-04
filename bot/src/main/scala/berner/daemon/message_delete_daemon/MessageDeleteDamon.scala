@@ -13,11 +13,11 @@ import scala.util.control.Exception.allCatch
 
 object MessageDeleteDamon extends Logger {
   def task(discordBotToken: String): IO[Unit] = {
-    (for {
+    for {
       jda <- preExecute(discordBotToken)
       _ <- execute(jda)
       _ <- postExecute()
-    } yield ()).foreverM
+    } yield task(discordBotToken)
   }
 
   private def preExecute(discordBotToken: String): IO[JDA] = IO {
@@ -73,7 +73,7 @@ object MessageDeleteDamon extends Logger {
     }
     val waitTask = IO.sleep(5.seconds)
 
-    (deleteTask *> waitTask).foreverM
+    deleteTask *> waitTask *> execute(jda)
   }
 
   private def postExecute(): IO[Unit] = IO {}
