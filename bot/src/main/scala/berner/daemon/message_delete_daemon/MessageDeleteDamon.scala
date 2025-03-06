@@ -71,7 +71,7 @@ object MessageDeleteDamon extends Logger {
         }
       }
     }
-    val waitTask = IO.sleep(5.seconds)
+    val waitTask = IO.sleep(15.seconds)
 
     deleteTask *> waitTask *> execute(jda)
   }
