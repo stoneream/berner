@@ -7,8 +7,8 @@ import java.time.OffsetDateTime
 case class UserPublicKey(
     id: Long,
     userId: String,
-    key_pem: String,
-    key_type: String,
+    keyPem: String,
+    keyType: String,
     createdAt: OffsetDateTime,
     updatedAt: OffsetDateTime,
     deletedAt: Option[OffsetDateTime]
