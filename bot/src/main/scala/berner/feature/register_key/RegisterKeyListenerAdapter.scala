@@ -1,17 +1,27 @@
 package berner.feature.register_key
 
+import berner.database.UserPublicKeyWriter
+import berner.logging.Logger
+import berner.model.register_key.UserPublicKey
 import berner.model.register_key.UserPublicKey.UserPublicKeyType
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.interactions.components.ActionRow
-import net.dv8tion.jda.api.interactions.components.selections.{SelectMenu, SelectOption, StringSelectMenu}
 import net.dv8tion.jda.api.interactions.components.text.{TextInput, TextInputStyle}
 import net.dv8tion.jda.api.interactions.modals.Modal
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo
+import org.bouncycastle.openssl.PEMParser
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
+import scalikejdbc.DB
 
-class RegisterKeyListenerAdapter extends ListenerAdapter {
+import java.io.StringReader
+import java.time.OffsetDateTime
+import scala.util.Using
+import scala.util.control.Exception.allCatch
+
+class RegisterKeyListenerAdapter extends ListenerAdapter with Logger {
   private val modalCustomId = "berner-register-key"
-  private val modalKeyType = "key-type"
   private val modalKeyPem = "key-pem"
 
   override def onSlashCommandInteraction(event: SlashCommandInteractionEvent): Unit = {
@@ -19,13 +29,6 @@ class RegisterKeyListenerAdapter extends ListenerAdapter {
       // do nothing
       event.deferReply().queue()
     } else {
-      val selectKeyType = StringSelectMenu
-        .create(modalKeyType)
-        .addOption("RSA", "rsa")
-        .addOption("ECDSA", "ecdsa")
-        .setRequiredRange(1, 1)
-        .build()
-
       val inputKeyPem = TextInput
         .create(modalKeyPem, "PEM", TextInputStyle.PARAGRAPH)
         .setRequired(true)
@@ -34,7 +37,6 @@ class RegisterKeyListenerAdapter extends ListenerAdapter {
 
       val modal = Modal
         .create(modalCustomId, "Register Key")
-        .addComponents(ActionRow.of(selectKeyType))
         .addComponents(ActionRow.of(inputKeyPem))
         .build()
 
@@ -48,23 +50,62 @@ class RegisterKeyListenerAdapter extends ListenerAdapter {
       event.deferReply().queue()
     } else {
       val input = for {
-        keyType <- Option(event.getValue(modalKeyType)).map(_.getAsString).flatMap(UserPublicKeyType.fromString)
         keyPem <- Option(event.getValue(modalKeyPem)).map(_.getAsString)
       } yield {
-        (keyType, keyPem)
+        keyPem
       }
-
       input match {
-        case Some((keyType, keyPem)) =>
-          // 鍵のフォーマットをチェック
+        case Some(keyPem) if keyPem.nonEmpty =>
+          // 鍵のチェック
+          val publicKeyOpt = Using.resource(new PEMParser(new StringReader(keyPem))) { parser =>
+            Option(parser.readObject()) match {
+              case Some(info: SubjectPublicKeyInfo) =>
+                allCatch.either(Option(new JcaPEMKeyConverter().getPublicKey(info))) match {
+                  case Left(e) =>
+                    warn("公開鍵のチェックに失敗しました。", e)
+                    None
+                  case Right(None) =>
+                    warn("公開鍵のチェックに失敗しました。")
+                    None
+                  case Right(Some(publicKey)) => Some(publicKey)
+                }
+              case _ =>
+                warn("公開鍵のチェックに失敗しました。")
+                None
+            }
+          }
+          val keyTypeOpt = publicKeyOpt.flatMap { publicKey =>
+            // サポートしているのはRSAおよびED25519のみ
+            UserPublicKeyType.fromString(publicKey.getAlgorithm)
+          }
+
           // 鍵を登録する
-          // すでに登録されている鍵がある場合は上書き
-          // 登録完了メッセージを送信
-          ???
-        case None =>
-          // 鍵のタイプが不正もしくはPEMが入力されていない
-          // エラーメッセージを送信
-          ???
+          val keyOpt = for {
+            publicKey <- publicKeyOpt
+            keyType <- keyTypeOpt
+          } yield (publicKey, keyType)
+
+          keyOpt match {
+            case Some((_, keyType)) =>
+              val now = OffsetDateTime.now()
+              val upk = UserPublicKey(
+                id = 0L,
+                userId = event.getUser.getId,
+                keyPem = keyPem,
+                keyType = keyType.value,
+                createdAt = now,
+                updatedAt = now,
+                deletedAt = None
+              )
+              DB localTx { session =>
+                UserPublicKeyWriter.write(upk :: Nil)(session)
+              }
+              event.reply("鍵の登録が完了しました。").setEphemeral(true).queue()
+            case None =>
+              event.reply("未サポートの鍵形式です。(RSA, ED25519)").setEphemeral(true).queue()
+          }
+        case _ =>
+          event.reply("PEMが入力されていません。").setEphemeral(true).queue()
       }
     }
   }
