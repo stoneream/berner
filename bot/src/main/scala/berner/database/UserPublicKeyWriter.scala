@@ -1,6 +1,5 @@
 package berner.database
 
-import berner.model.hub.HubMessageMapping
 import berner.model.register_key.UserPublicKey
 import scalikejdbc._
 
@@ -27,22 +26,23 @@ object UserPublicKeyWriter {
     }
 
     withSQL {
-      insert.into(HubMessageMapping).namedValues(builder.columnsAndPlaceholders: _*)
+      insert.into(UserPublicKey).namedValues(builder.columnsAndPlaceholders: _*)
     }.batch(builder.batchParams: _*).apply()
   }
 
-  def delete(id: Long, now: OffsetDateTime)(session: DBSession): Unit = {
+  def deleteByUserId(userId: String, now: OffsetDateTime)(session: DBSession): Unit = {
     implicit val s: DBSession = session
-    val hmm = HubMessageMapping.syntax("hmm")
+    val upk = UserPublicKey.syntax("upk")
     withSQL {
-      update(HubMessageMapping as hmm)
+      update(UserPublicKey as upk)
         .set(
-          hmm.deletedAt -> now,
-          hmm.updatedAt -> now
+          upk.deletedAt -> now,
+          upk.updatedAt -> now
         )
         .where
-        .eq(hmm.id, id)
+        .eq(upk.userId, userId)
+        .and
+        .isNull(upk.deletedAt)
     }.update.apply()
   }
-
 }
