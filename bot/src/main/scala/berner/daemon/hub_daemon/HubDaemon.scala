@@ -29,13 +29,6 @@ object HubDaemon {
 
   private def execute(jda: JDA): IO[Boolean] = {
     IO {
-      jda
-        .updateCommands()
-        .addCommands(
-          Commands.slash(Archiver.slashCommandName, Archiver.slashCommandDescription).setGuildOnly(true)
-        )
-        .queue()
-
       jda.awaitShutdown()
     }.guarantee(IO {
       val client = jda.getHttpClient
