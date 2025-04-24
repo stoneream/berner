@@ -87,17 +87,21 @@ class RegisterKeyListenerAdapter extends ListenerAdapter with Logger {
 
           keyOpt match {
             case Some((_, keyType)) =>
-              val now = OffsetDateTime.now()
-              val upk = UserPublicKey(
-                id = 0L,
-                userId = event.getUser.getId,
-                keyPem = keyPem,
-                keyType = keyType.value,
-                createdAt = now,
-                updatedAt = now,
-                deletedAt = None
-              )
-              DB localTx { session =>
+              DB localTx { implicit session =>
+                val now = OffsetDateTime.now()
+                // すでに存在する古い鍵は削除する
+                UserPublicKeyWriter.deleteByUserId(event.getUser.getId, now)(session)
+
+                // 新しい鍵を登録
+                val upk = UserPublicKey(
+                  id = 0L,
+                  userId = event.getUser.getId,
+                  keyPem = keyPem,
+                  keyType = keyType.value,
+                  createdAt = now,
+                  updatedAt = now,
+                  deletedAt = None
+                )
                 UserPublicKeyWriter.write(upk :: Nil)(session)
               }
               event.reply("鍵の登録が完了しました。").setEphemeral(true).queue()
