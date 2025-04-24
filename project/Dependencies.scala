@@ -54,7 +54,7 @@ object Dependencies {
 
   // discord
   lazy val jda: Seq[ModuleID] = Seq(
-    "net.dv8tion" % "JDA" % "5.2.1",
+    "net.dv8tion" % "JDA" % "5.4.0",
     "club.minnced" % "discord-webhooks" % "0.8.4"
   )
 
