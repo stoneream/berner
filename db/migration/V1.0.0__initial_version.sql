@@ -1,6 +1,6 @@
 -- todo コメント書きたい
 
-create table if not exists create table hub_messages(
+create table if not exists table hub_messages(
   id serial primary key,
   source_message_id varchar(255) not null,
   source_channel_id varchar(255) not null,
