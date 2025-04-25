@@ -1,6 +1,6 @@
 -- todo コメント書きたい
 
-create table exchange_rates(
+create table if not exists create table exchange_rates(
   id serial primary key,
   base_currency varchar(255) not null,
   target_currency varchar(255) not null,
