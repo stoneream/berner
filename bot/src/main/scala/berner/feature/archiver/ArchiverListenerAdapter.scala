@@ -7,7 +7,9 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.entities.channel.middleman.{GuildMessageChannel, MessageChannel}
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
+import net.dv8tion.jda.api.events.session.ReadyEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.components.ActionRow
 import net.dv8tion.jda.api.interactions.components.text.{TextInput, TextInputStyle}
 import net.dv8tion.jda.api.interactions.modals.Modal
@@ -38,6 +40,19 @@ class ArchiverListenerAdapter extends ListenerAdapter {
       case None =>
         (eventSourceChannel.asGuildMessageChannel(), None)
     }
+  }
+
+  override def onReady(event: ReadyEvent): Unit = {
+    super.onReady(event)
+
+    val jda = event.getJDA
+
+    jda
+      .updateCommands()
+      .addCommands(
+        Commands.slash(Archiver.slashCommandName, Archiver.slashCommandDescription).setGuildOnly(true)
+      )
+      .queue()
   }
 
   override def onSlashCommandInteraction(event: SlashCommandInteractionEvent): Unit = {

@@ -9,33 +9,34 @@ import scalikejdbc.DB
 
 import java.time.OffsetDateTime
 import scala.concurrent.duration.DurationInt
-import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.util.control.Exception.allCatch
 
 object MessageDeleteDamon extends Logger {
   def task(discordBotToken: String): IO[Unit] = {
     (for {
       jda <- preExecute(discordBotToken)
-      _ <- execute(jda)
+      _ <- execute(jda).handleErrorWith { e =>
+        IO {
+          logger.error("メッセージ削除処理中にエラーが発生しました。", e)
+        }
+      }
       _ <- postExecute()
     } yield ()).foreverM
   }
 
   private def preExecute(discordBotToken: String): IO[JDA] = IO {
-    JDABuilder
-      .createDefault(discordBotToken)
-      .build()
+    JDABuilder.createDefault(discordBotToken).build().awaitReady()
   }
 
   private def execute(jda: JDA): IO[Unit] = {
-    (IO {
+    val deleteTask = IO {
       // 100件ずつ取得して削除
       val rows = DB.localTx { s => HubMessageDeleteQueueReader.pendings(limit = 100)(s) }
 
       if (rows.isEmpty) {
         // do nothing
       } else {
-        info(s"削除対象のメッセージを取得しました。(${rows.size})")
+        logger.info(s"削除対象のメッセージを取得しました。(${rows.size})")
 
         val groupedRows = rows
           .groupBy { case (_, hmm) => hmm.guildId } // サーバーごとにグルーピング
@@ -58,12 +59,13 @@ object MessageDeleteDamon extends Logger {
               }
             } match { // 削除結果に応じてDBのステータスを更新
               case Left(e) =>
-                error("メッセージの削除中にエラーが発生しました", e)
+                logger.error(s"メッセージの削除中にエラーが発生しました。${messageIds.size}", e)
                 val now = OffsetDateTime.now()
                 DB.localTx { s =>
                   HubMessageDeleteQueueWriter.markFailedByMessageIds(queueIds, now)(s)
                 }
               case Right(_) =>
+                logger.info(s"メッセージを削除しました。(${messageIds.size})")
                 val now = OffsetDateTime.now()
                 DB.localTx { s =>
                   HubMessageDeleteQueueWriter.markDeleteByMessageIds(queueIds, now)(s)
@@ -72,7 +74,10 @@ object MessageDeleteDamon extends Logger {
           }
         }
       }
-    } *> IO.sleep(5.second)).foreverM
+    }
+    val waitTask = IO.sleep(15.seconds)
+
+    (deleteTask *> waitTask).foreverM
   }
 
   private def postExecute(): IO[Unit] = IO {}
