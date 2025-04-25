@@ -54,7 +54,7 @@ object RegisterKeyLogic extends Logger {
         case Some(info: org.bouncycastle.asn1.x509.SubjectPublicKeyInfo) =>
           Right(new JcaPEMKeyConverter().getPublicKey(info))
         case _ =>
-          warn("公開鍵のパースに失敗しました。")
+          logger.warn("公開鍵のパースに失敗しました。")
           Left(KeyParseError.InvalidFormat)
       }
     }
@@ -75,12 +75,12 @@ object RegisterKeyLogic extends Logger {
               val spec = new X509EncodedKeySpec(keyBytes)
               Right(KeyFactory.getInstance("Ed25519", "BC").generatePublic(spec))
             case _ =>
-              warn(s"未サポートのアルゴリズムです。")
+              logger.warn(s"未サポートのアルゴリズムです。")
               Left(KeyParseError.UnsupportedType)
           }
         } catch {
           case e: Throwable =>
-            warn("公開鍵のパースに失敗しました。", e)
+            logger.warn("公開鍵のパースに失敗しました。", e)
             Left(KeyParseError.InvalidFormat)
         }
       case _ => Left(KeyParseError.InvalidFormat)
