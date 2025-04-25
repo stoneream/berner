@@ -54,16 +54,14 @@ $ flyway -configFiles="flyway.sample.conf" migrate
 
 ![memo2](./memo2.png)
 
-不必要な権限もつけている。のでよしなに...
-
 ## 環境変数
 
-| 変数名                        | 説明               | 補足                    |
-|----------------------------|------------------|-----------------------|
-| BERNER_DISCORD_TOKEN       | DiscordのBotのトークン | Developer Portal から取得 |
-| BERNER_DB_DEFAULT_HOST     | データベースのホスト       |                       |
-| BERNER_DB_DEFAULT_PORT     | データベースのポート       |                       |
-| BERNER_DB_DEFAULT_NAME     | データベースの名前        |                       |
-| BERNER_DB_DEFAULT_USER     | データベースのユーザー名     |                       |
-| BERNER_DB_DEFAULT_PASSWORD | データベースのパスワード     |                       |
-| BERNER_LOG_PATH | ログファイルの出力先 |                       |
+| 変数名                     | 説明                     | 補足                      |
+| -------------------------- | ------------------------ | ------------------------- |
+| BERNER_DISCORD_TOKEN       | DiscordのBotのトークン   | Developer Portal から取得 |
+| BERNER_DB_DEFAULT_HOST     | データベースのホスト     |                           |
+| BERNER_DB_DEFAULT_PORT     | データベースのポート     |                           |
+| BERNER_DB_DEFAULT_NAME     | データベースの名前       |                           |
+| BERNER_DB_DEFAULT_USER     | データベースのユーザー名 |                           |
+| BERNER_DB_DEFAULT_PASSWORD | データベースのパスワード |                           |
+| BERNER_LOG_PATH            | ログファイルの出力先     |                           |
