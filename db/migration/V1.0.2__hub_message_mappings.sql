@@ -1,4 +1,4 @@
-create table if not exists create table hub_message_mappings(
+create table if not exists hub_message_mappings(
   id serial primary key,
   guild_id varchar(255) not null,
   source_guild_message_channel_id varchar(255) not null,
