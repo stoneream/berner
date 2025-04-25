@@ -10,7 +10,8 @@ object Dependencies {
     typesafeConfig,
     circe,
     zip4j,
-    bouncyCastle
+    bouncyCastle,
+    scalatest
   ).flatten
 
   // logging
@@ -55,7 +56,7 @@ object Dependencies {
 
   // discord
   lazy val jda: Seq[ModuleID] = Seq(
-    "net.dv8tion" % "JDA" % "5.2.1",
+    "net.dv8tion" % "JDA" % "5.4.0",
     "club.minnced" % "discord-webhooks" % "0.8.4"
   )
 
@@ -71,9 +72,6 @@ object Dependencies {
     "org.bouncycastle" % "bcprov-jdk18on" % "1.80",
     "org.bouncycastle" % "bcpkix-jdk18on" % "1.80"
   )
-
-  // test
-  lazy val test: Seq[sbt.ModuleID] = scalatest
 
   lazy val scalatest: Seq[ModuleID] = Seq(
     "org.scalatest" %% "scalatest" % "3.2.19" % Test

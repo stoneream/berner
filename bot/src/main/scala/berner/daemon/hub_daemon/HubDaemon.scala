@@ -2,9 +2,9 @@ package berner.daemon.hub_daemon
 
 import berner.feature.archiver.ArchiverListenerAdapter
 import berner.feature.hub.HubListenerAdapter
+import berner.feature.init_slash_command.InitSlashCommandListenerAdapter
 import berner.feature.ping.PingListenerAdapter
 import cats.effect.IO
-import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.{JDA, JDABuilder}
 
@@ -23,6 +23,7 @@ object HubDaemon {
       .enableIntents(GatewayIntent.MESSAGE_CONTENT)
       .enableIntents(GatewayIntent.GUILD_WEBHOOKS)
       .enableIntents(GatewayIntent.GUILD_MESSAGES)
+      .addEventListeners(new InitSlashCommandListenerAdapter)
       .addEventListeners(new HubListenerAdapter)
       .addEventListeners(new ArchiverListenerAdapter)
       .addEventListeners(new PingListenerAdapter)
@@ -31,13 +32,6 @@ object HubDaemon {
 
   private def execute(jda: JDA): IO[Boolean] = {
     IO {
-      jda
-        .updateCommands()
-        .addCommands(
-          Commands.slash(ArchiverListenerAdapter.slashCommandName, ArchiverListenerAdapter.slashCommandDescription).setGuildOnly(true)
-        )
-        .queue()
-
       jda.awaitShutdown()
     }.guarantee(IO {
       val client = jda.getHttpClient

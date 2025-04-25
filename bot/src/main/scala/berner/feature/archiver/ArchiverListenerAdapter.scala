@@ -1,6 +1,6 @@
 package berner.feature.archiver
 
-import ArchiverListenerAdapter.slashCommandName
+import berner.feature.archiver.ArchiverListenerAdapter.slashCommandName
 import io.circe._
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
@@ -85,9 +85,7 @@ class ArchiverListenerAdapter extends ListenerAdapter {
     }
 
     if (event.getModalId != modalCustomId) {
-      // unknown modal
       // do nothing
-      event.deferReply().queue()
     } else {
       Option(event.getValue(modalZipPassword))
         .map(_.getAsString)

@@ -16,7 +16,8 @@ object UserPublicKeyWriter {
       rows.map { row =>
         Seq(
           column.userId -> row.userId,
-          column.keyPem -> row.keyPem,
+          column.keyValue -> row.keyValue,
+          column.keyAlgorithm -> row.keyAlgorithm,
           column.keyType -> row.keyType,
           column.createdAt -> row.createdAt,
           column.updatedAt -> row.updatedAt,

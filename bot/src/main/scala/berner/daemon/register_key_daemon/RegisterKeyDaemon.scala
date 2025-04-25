@@ -2,7 +2,6 @@ package berner.daemon.register_key_daemon
 
 import berner.feature.register_key.RegisterKeyListenerAdapter
 import cats.effect.IO
-import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.{JDA, JDABuilder}
 
@@ -26,13 +25,6 @@ object RegisterKeyDaemon {
 
   private def execute(jda: JDA): IO[Boolean] = {
     IO {
-      jda
-        .updateCommands()
-        .addCommands(
-          Commands.slash(RegisterKeyListenerAdapter.slashCommandName, RegisterKeyListenerAdapter.slashCommandDescription).setGuildOnly(true)
-        )
-        .queue()
-
       jda.awaitShutdown()
     }.guarantee(IO {
       val client = jda.getHttpClient
