@@ -1,14 +1,11 @@
-package berner.daemon.hub_daemon
+package berner.daemon.register_key_daemon
 
-import berner.feature.archiver.ArchiverListenerAdapter
-import berner.feature.hub.HubListenerAdapter
-import berner.feature.init_slash_command.InitSlashCommandListenerAdapter
-import berner.feature.ping.PingListenerAdapter
+import berner.feature.register_key.RegisterKeyListenerAdapter
 import cats.effect.IO
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.{JDA, JDABuilder}
 
-object HubDaemon {
+object RegisterKeyDaemon {
   def task(discordBotToken: String): IO[Unit] = {
     (for {
       jda <- preExecute(discordBotToken)
@@ -21,12 +18,8 @@ object HubDaemon {
     JDABuilder
       .createDefault(discordBotToken)
       .enableIntents(GatewayIntent.MESSAGE_CONTENT)
-      .enableIntents(GatewayIntent.GUILD_WEBHOOKS)
       .enableIntents(GatewayIntent.GUILD_MESSAGES)
-      .addEventListeners(new InitSlashCommandListenerAdapter)
-      .addEventListeners(new HubListenerAdapter)
-      .addEventListeners(new ArchiverListenerAdapter)
-      .addEventListeners(new PingListenerAdapter)
+      .addEventListeners(new RegisterKeyListenerAdapter)
       .build()
   }
 

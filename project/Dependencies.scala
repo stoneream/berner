@@ -9,7 +9,9 @@ object Dependencies {
     mariadb,
     typesafeConfig,
     circe,
-    zip4j
+    zip4j,
+    bouncyCastle,
+    scalatest
   ).flatten
 
   // logging
@@ -66,8 +68,10 @@ object Dependencies {
     "org.typelevel" %% "cats-effect" % "3.5.7"
   )
 
-  // test
-  lazy val test: Seq[sbt.ModuleID] = scalatest
+  lazy val bouncyCastle: Seq[ModuleID] = Seq(
+    "org.bouncycastle" % "bcprov-jdk18on" % "1.80",
+    "org.bouncycastle" % "bcpkix-jdk18on" % "1.80"
+  )
 
   lazy val scalatest: Seq[ModuleID] = Seq(
     "org.scalatest" %% "scalatest" % "3.2.19" % Test

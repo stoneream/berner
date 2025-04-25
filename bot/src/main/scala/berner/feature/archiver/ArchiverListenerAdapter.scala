@@ -1,15 +1,13 @@
-package berner.bot
+package berner.feature.archiver
 
-import berner.bot.Archiver.slashCommandName
+import berner.feature.archiver.ArchiverListenerAdapter.slashCommandName
 import io.circe._
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.entities.channel.middleman.{GuildMessageChannel, MessageChannel}
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
-import net.dv8tion.jda.api.events.session.ReadyEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
-import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.components.ActionRow
 import net.dv8tion.jda.api.interactions.components.text.{TextInput, TextInputStyle}
 import net.dv8tion.jda.api.interactions.modals.Modal
@@ -25,7 +23,7 @@ import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
 import scala.util.control.Exception.allCatch
 
-class Archiver extends ListenerAdapter {
+class ArchiverListenerAdapter extends ListenerAdapter {
   private val modalCustomId = "berner-archiver"
   private val modalZipPassword = "zip-password"
 
@@ -40,19 +38,6 @@ class Archiver extends ListenerAdapter {
       case None =>
         (eventSourceChannel.asGuildMessageChannel(), None)
     }
-  }
-
-  override def onReady(event: ReadyEvent): Unit = {
-    super.onReady(event)
-
-    val jda = event.getJDA
-
-    jda
-      .updateCommands()
-      .addCommands(
-        Commands.slash(Archiver.slashCommandName, Archiver.slashCommandDescription).setGuildOnly(true)
-      )
-      .queue()
   }
 
   override def onSlashCommandInteraction(event: SlashCommandInteractionEvent): Unit = {
@@ -100,9 +85,7 @@ class Archiver extends ListenerAdapter {
     }
 
     if (event.getModalId != modalCustomId) {
-      // unknown modal
       // do nothing
-      event.deferReply().queue()
     } else {
       Option(event.getValue(modalZipPassword))
         .map(_.getAsString)
@@ -180,7 +163,7 @@ class Archiver extends ListenerAdapter {
   }
 }
 
-object Archiver {
+object ArchiverListenerAdapter {
   val slashCommandName = "archiver"
   val slashCommandDescription = "Archive Channel Messages"
 }

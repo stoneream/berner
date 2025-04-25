@@ -2,6 +2,7 @@ package berner.bot
 
 import berner.daemon.hub_daemon.HubDaemon
 import berner.daemon.message_delete_daemon.MessageDeleteDamon
+import berner.daemon.register_key_daemon.RegisterKeyDaemon
 import berner.logging.Logger
 import cats.effect.{ExitCode, IO, IOApp}
 import com.typesafe.config.ConfigFactory
@@ -24,7 +25,11 @@ object Main extends IOApp with Logger {
       discordBotToken <- loadConfig
       _ <- setupDB
       hubDaemonFiber <- HubDaemon.task(discordBotToken).start
+      registerKeyDaemonFiber <- RegisterKeyDaemon.task(discordBotToken).start
       messageDeleteDamonFiber <- MessageDeleteDamon.task(discordBotToken).start
+      _ <- hubDaemonFiber.join
+      _ <- registerKeyDaemonFiber.join
+      _ <- messageDeleteDamonFiber.join
       _ <- hubDaemonFiber.join.guarantee {
         IO {
           logger.info("HubDaemon has been stopped.")

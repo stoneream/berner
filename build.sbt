@@ -57,6 +57,6 @@ lazy val bot = (project in file("bot"))
   .settings(
     name := "berner-bot",
     libraryDependencies ++= Dependencies.bot,
-    fork := true,
+    fork := true
   )
-  .dependsOn(logging)
+  .dependsOn(logging % "compile->compile;test->test")
