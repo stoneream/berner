@@ -30,16 +30,6 @@ object Main extends IOApp with Logger {
       _ <- hubDaemonFiber.join
       _ <- registerKeyDaemonFiber.join
       _ <- messageDeleteDamonFiber.join
-      _ <- hubDaemonFiber.join.guarantee {
-        IO {
-          logger.info("HubDaemon has been stopped.")
-        }
-      }
-      _ <- messageDeleteDamonFiber.join.guarantee {
-        IO {
-          logger.info("MessageDeleteDaemon has been stopped.")
-        }
-      }
     } yield ()).guarantee(closeDB).as(ExitCode.Success)
   }
 }
