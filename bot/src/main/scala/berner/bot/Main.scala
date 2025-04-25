@@ -27,9 +27,21 @@ object Main extends IOApp with Logger {
       hubDaemonFiber <- HubDaemon.task(discordBotToken).start
       registerKeyDaemonFiber <- RegisterKeyDaemon.task(discordBotToken).start
       messageDeleteDamonFiber <- MessageDeleteDamon.task(discordBotToken).start
-      _ <- hubDaemonFiber.join
-      _ <- registerKeyDaemonFiber.join
-      _ <- messageDeleteDamonFiber.join
+      _ <- hubDaemonFiber.join.guarantee {
+        IO {
+          logger.info("Shutting down hub daemon...")
+        }
+      }
+      _ <- registerKeyDaemonFiber.join.guarantee {
+        IO {
+          logger.info("Shutting down register key daemon...")
+        }
+      }
+      _ <- messageDeleteDamonFiber.join.guarantee {
+        IO {
+          logger.info("Shutting down delete daemons...")
+        }
+      }
     } yield ()).guarantee(closeDB).as(ExitCode.Success)
   }
 }
