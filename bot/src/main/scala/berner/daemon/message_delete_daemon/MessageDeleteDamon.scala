@@ -51,12 +51,9 @@ object MessageDeleteDamon extends Logger {
                 guild <- Option(jda.getGuildById(guildId))
                 hubChannel <- Option(guild.getChannelById(classOf[TextChannel], hubMessageChannelId))
               } yield {
-                messageIds match {
-                  case id :: Nil =>
-                    hubChannel.deleteMessageById(id).complete()
-                  case ids =>
-                    // IllegalArgumentException – If the size of the list less than 2 or more than 100
-                    hubChannel.deleteMessagesByIds(ids.asJava).complete()
+                messageIds.foreach { id =>
+                  hubChannel.deleteMessageById(id).complete()
+                  Thread.sleep(250) // 雑にスリープ...
                 }
               }
             } match { // 削除結果に応じてDBのステータスを更新
@@ -75,11 +72,7 @@ object MessageDeleteDamon extends Logger {
           }
         }
       }
-    } *> IO.sleep(5.second)).foreverM.guarantee(IO {
-      val client = jda.getHttpClient
-      client.connectionPool.evictAll()
-      client.dispatcher.executorService.shutdown()
-    })
+    } *> IO.sleep(5.second)).foreverM
   }
 
   private def postExecute(): IO[Unit] = IO {}
