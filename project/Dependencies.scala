@@ -6,12 +6,16 @@ object Dependencies {
     catsIO,
     jda,
     scalikejdbc,
-    mariadb,
     typesafeConfig,
     circe,
     zip4j,
     bouncyCastle,
     scalatest
+  ).flatten
+
+  lazy val database: Seq[sbt.ModuleID] = Seq(
+    scalikejdbc,
+    mariadb
   ).flatten
 
   // logging
@@ -42,7 +46,7 @@ object Dependencies {
 
   // database
   lazy val mariadb: Seq[ModuleID] = Seq(
-    "org.mariadb.jdbc" % "mariadb-java-client" % "3.4.1" excludeAll (
+    "org.mariadb.jdbc" % "mariadb-java-client" % "3.5.4" excludeAll (
       ExclusionRule("org.slf4j", "jcl-over-slf4j") // 依存がぶつかるので除外
     )
   )

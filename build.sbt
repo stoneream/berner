@@ -52,6 +52,14 @@ lazy val logging = (project in file("logging"))
     libraryDependencies ++= Dependencies.logging
   )
 
+lazy val database = (project in file("database"))
+  .settings(baseSettings)
+  .settings(
+    name := "berner-database",
+    libraryDependencies ++= Dependencies.database
+  )
+  .enablePlugins(ScalikejdbcPlugin)
+
 lazy val bot = (project in file("bot"))
   .settings(baseSettings)
   .settings(
@@ -60,3 +68,4 @@ lazy val bot = (project in file("bot"))
     fork := true
   )
   .dependsOn(logging % "compile->compile;test->test")
+  .dependsOn(database % "compile->compile;test->test")

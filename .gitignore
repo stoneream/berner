@@ -10,3 +10,4 @@ db/report.json
 logs
 .bloop
 
+project/scalikejdbc.properties

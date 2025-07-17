@@ -1,0 +1,28 @@
+# ---
+# jdbc settings
+
+jdbc.driver=org.mariadb.jdbc.Driver
+jdbc.url=jdbc:mariadb://127.0.0.1:23306/
+jdbc.username=berner
+jdbc.password=berner
+jdbc.schema=berner
+
+# ---
+# source code generator settings
+
+generator.packageName=database
+# generator.lineBreak: LF/CRLF
+generator.lineBreak=LF
+# generator.template: interpolation/queryDsl
+generator.template=queryDsl
+# generator.testTemplate: specs2unit/specs2acceptance/ScalaTestFlatSpec
+generator.testTemplate=ScalaTestFlatSpec
+generator.encoding=UTF-8
+# Set AutoSession for implicit DBSession parameter's default value
+generator.defaultAutoSession=false
+# Use autoConstruct macro (default: false)
+generator.autoConstruct=true
+# joda-time (org.joda.time.DateTime) or JSR-310 (java.time.ZonedDateTime java.time.OffsetDateTime java.time.LocalDateTime)
+generator.dateTimeClass=java.time.OffsetDateTime
+# Convert plural table names to singular class names
+generator.tableNameToClassName=singularize
