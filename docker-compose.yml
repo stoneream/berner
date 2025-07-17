@@ -4,6 +4,7 @@ services:
     env_file: ./docker/dev.env
     volumes:
       - berner-data:/var/lib/mysql
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - 127.0.0.1:23306:3306
   flyway:
@@ -12,7 +13,20 @@ services:
       - ./db/migration:/flyway/sql
     command: >
       -url=jdbc:mariadb://mariadb:3306
-      -schemas=dev_berner
+      -schemas=berner
+      -connectRetries=60
+      -user=root
+      -password=
+      migrate
+    depends_on:
+      - mariadb
+  flyway-test:
+    image: flyway/flyway:10.13-alpine
+    volumes:
+      - ./db/migration:/flyway/sql
+    command: >
+      -url=jdbc:mariadb://mariadb:3306
+      -schemas=berner_test
       -connectRetries=60
       -user=root
       -password=
