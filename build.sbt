@@ -58,6 +58,17 @@ lazy val database = (project in file("database"))
     name := "berner-database",
     libraryDependencies ++= Dependencies.database
   )
+  .settings(
+    // テーブル名が複数形の場合に末尾の "s" を削除する (ies や es などの例外は考慮していない)
+    Compile / scalikejdbcGeneratorSettings ~= { c =>
+      c.copy(tableNameToClassName = x => {
+        c.tableNameToClassName(x).reverse.toList match {
+          case Nil => ""
+          case _ :: tail => tail.mkString.reverse
+        }
+      })
+    }
+  )
   .enablePlugins(ScalikejdbcPlugin)
 
 lazy val bot = (project in file("bot"))

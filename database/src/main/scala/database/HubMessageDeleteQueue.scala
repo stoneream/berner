@@ -22,7 +22,7 @@ object HubMessageDeleteQueue extends SQLSyntaxSupport[HubMessageDeleteQueue] {
 
   override val schemaName = Some("berner")
 
-  override val tableName = "hub_message_delete_queue"
+  override val tableName = "hub_message_delete_queues"
 
   override val columns = Seq("id", "hub_message_mapping_id", "status", "created_at", "updated_at", "deleted_at")
 
@@ -98,7 +98,7 @@ object HubMessageDeleteQueue extends SQLSyntaxSupport[HubMessageDeleteQueue] {
         "createdAt" -> entity.createdAt,
         "updatedAt" -> entity.updatedAt,
         "deletedAt" -> entity.deletedAt))
-    SQL("""insert into hub_message_delete_queue(
+    SQL("""insert into hub_message_delete_queues(
       hub_message_mapping_id,
       status,
       created_at,

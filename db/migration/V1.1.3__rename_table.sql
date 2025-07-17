@@ -1,0 +1,1 @@
+ALTER TABLE hub_message_delete_queue RENAME TO hub_message_delete_queues;

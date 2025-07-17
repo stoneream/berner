@@ -3,7 +3,7 @@ package database
 import scalikejdbc._
 import java.time.{OffsetDateTime}
 
-case class UserPublicKeys(
+case class UserPublicKey(
   id: Long,
   userId: String,
   keyValue: String,
@@ -13,14 +13,14 @@ case class UserPublicKeys(
   updatedAt: OffsetDateTime,
   deletedAt: Option[OffsetDateTime] = None) {
 
-  def save()(implicit session: DBSession): UserPublicKeys = UserPublicKeys.save(this)(session)
+  def save()(implicit session: DBSession): UserPublicKey = UserPublicKey.save(this)(session)
 
-  def destroy()(implicit session: DBSession): Int = UserPublicKeys.destroy(this)(session)
+  def destroy()(implicit session: DBSession): Int = UserPublicKey.destroy(this)(session)
 
 }
 
 
-object UserPublicKeys extends SQLSyntaxSupport[UserPublicKeys] {
+object UserPublicKey extends SQLSyntaxSupport[UserPublicKey] {
 
   override val schemaName = Some("berner")
 
@@ -28,42 +28,42 @@ object UserPublicKeys extends SQLSyntaxSupport[UserPublicKeys] {
 
   override val columns = Seq("id", "user_id", "key_value", "key_algorithm", "key_type", "created_at", "updated_at", "deleted_at")
 
-  def apply(upk: SyntaxProvider[UserPublicKeys])(rs: WrappedResultSet): UserPublicKeys = autoConstruct(rs, upk)
-  def apply(upk: ResultName[UserPublicKeys])(rs: WrappedResultSet): UserPublicKeys = autoConstruct(rs, upk)
+  def apply(upk: SyntaxProvider[UserPublicKey])(rs: WrappedResultSet): UserPublicKey = autoConstruct(rs, upk)
+  def apply(upk: ResultName[UserPublicKey])(rs: WrappedResultSet): UserPublicKey = autoConstruct(rs, upk)
 
-  val upk = UserPublicKeys.syntax("upk")
+  val upk = UserPublicKey.syntax("upk")
 
   override val autoSession = AutoSession
 
-  def find(id: Long)(implicit session: DBSession): Option[UserPublicKeys] = {
+  def find(id: Long)(implicit session: DBSession): Option[UserPublicKey] = {
     withSQL {
-      select.from(UserPublicKeys as upk).where.eq(upk.id, id)
-    }.map(UserPublicKeys(upk.resultName)).single.apply()
+      select.from(UserPublicKey as upk).where.eq(upk.id, id)
+    }.map(UserPublicKey(upk.resultName)).single.apply()
   }
 
-  def findAll()(implicit session: DBSession): List[UserPublicKeys] = {
-    withSQL(select.from(UserPublicKeys as upk)).map(UserPublicKeys(upk.resultName)).list.apply()
+  def findAll()(implicit session: DBSession): List[UserPublicKey] = {
+    withSQL(select.from(UserPublicKey as upk)).map(UserPublicKey(upk.resultName)).list.apply()
   }
 
   def countAll()(implicit session: DBSession): Long = {
-    withSQL(select(sqls.count).from(UserPublicKeys as upk)).map(rs => rs.long(1)).single.apply().get
+    withSQL(select(sqls.count).from(UserPublicKey as upk)).map(rs => rs.long(1)).single.apply().get
   }
 
-  def findBy(where: SQLSyntax)(implicit session: DBSession): Option[UserPublicKeys] = {
+  def findBy(where: SQLSyntax)(implicit session: DBSession): Option[UserPublicKey] = {
     withSQL {
-      select.from(UserPublicKeys as upk).where.append(where)
-    }.map(UserPublicKeys(upk.resultName)).single.apply()
+      select.from(UserPublicKey as upk).where.append(where)
+    }.map(UserPublicKey(upk.resultName)).single.apply()
   }
 
-  def findAllBy(where: SQLSyntax)(implicit session: DBSession): List[UserPublicKeys] = {
+  def findAllBy(where: SQLSyntax)(implicit session: DBSession): List[UserPublicKey] = {
     withSQL {
-      select.from(UserPublicKeys as upk).where.append(where)
-    }.map(UserPublicKeys(upk.resultName)).list.apply()
+      select.from(UserPublicKey as upk).where.append(where)
+    }.map(UserPublicKey(upk.resultName)).list.apply()
   }
 
   def countBy(where: SQLSyntax)(implicit session: DBSession): Long = {
     withSQL {
-      select(sqls.count).from(UserPublicKeys as upk).where.append(where)
+      select(sqls.count).from(UserPublicKey as upk).where.append(where)
     }.map(_.long(1)).single.apply().get
   }
 
@@ -74,9 +74,9 @@ object UserPublicKeys extends SQLSyntaxSupport[UserPublicKeys] {
     keyType: String,
     createdAt: OffsetDateTime,
     updatedAt: OffsetDateTime,
-    deletedAt: Option[OffsetDateTime] = None)(implicit session: DBSession): UserPublicKeys = {
+    deletedAt: Option[OffsetDateTime] = None)(implicit session: DBSession): UserPublicKey = {
     val generatedKey = withSQL {
-      insert.into(UserPublicKeys).namedValues(
+      insert.into(UserPublicKey).namedValues(
         column.userId -> userId,
         column.keyValue -> keyValue,
         column.keyAlgorithm -> keyAlgorithm,
@@ -87,7 +87,7 @@ object UserPublicKeys extends SQLSyntaxSupport[UserPublicKeys] {
       )
     }.updateAndReturnGeneratedKey.apply()
 
-    UserPublicKeys(
+    UserPublicKey(
       id = generatedKey,
       userId = userId,
       keyValue = keyValue,
@@ -98,7 +98,7 @@ object UserPublicKeys extends SQLSyntaxSupport[UserPublicKeys] {
       deletedAt = deletedAt)
   }
 
-  def batchInsert(entities: collection.Seq[UserPublicKeys])(implicit session: DBSession): List[Int] = {
+  def batchInsert(entities: collection.Seq[UserPublicKey])(implicit session: DBSession): List[Int] = {
     val params: collection.Seq[Seq[(String, Any)]] = entities.map(entity =>
       Seq(
         "userId" -> entity.userId,
@@ -127,9 +127,9 @@ object UserPublicKeys extends SQLSyntaxSupport[UserPublicKeys] {
     )""").batchByName(params.toSeq: _*).apply[List]()
   }
 
-  def save(entity: UserPublicKeys)(implicit session: DBSession): UserPublicKeys = {
+  def save(entity: UserPublicKey)(implicit session: DBSession): UserPublicKey = {
     withSQL {
-      update(UserPublicKeys).set(
+      update(UserPublicKey).set(
         column.id -> entity.id,
         column.userId -> entity.userId,
         column.keyValue -> entity.keyValue,
@@ -143,8 +143,8 @@ object UserPublicKeys extends SQLSyntaxSupport[UserPublicKeys] {
     entity
   }
 
-  def destroy(entity: UserPublicKeys)(implicit session: DBSession): Int = {
-    withSQL { delete.from(UserPublicKeys).where.eq(column.id, entity.id) }.update.apply()
+  def destroy(entity: UserPublicKey)(implicit session: DBSession): Int = {
+    withSQL { delete.from(UserPublicKey).where.eq(column.id, entity.id) }.update.apply()
   }
 
 }

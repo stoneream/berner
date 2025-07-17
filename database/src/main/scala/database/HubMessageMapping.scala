@@ -3,7 +3,7 @@ package database
 import scalikejdbc._
 import java.time.{OffsetDateTime}
 
-case class HubMessageMappings(
+case class HubMessageMapping(
   id: Long,
   guildId: String,
   sourceGuildMessageChannelId: String,
@@ -15,14 +15,14 @@ case class HubMessageMappings(
   updatedAt: OffsetDateTime,
   deletedAt: Option[OffsetDateTime] = None) {
 
-  def save()(implicit session: DBSession): HubMessageMappings = HubMessageMappings.save(this)(session)
+  def save()(implicit session: DBSession): HubMessageMapping = HubMessageMapping.save(this)(session)
 
-  def destroy()(implicit session: DBSession): Int = HubMessageMappings.destroy(this)(session)
+  def destroy()(implicit session: DBSession): Int = HubMessageMapping.destroy(this)(session)
 
 }
 
 
-object HubMessageMappings extends SQLSyntaxSupport[HubMessageMappings] {
+object HubMessageMapping extends SQLSyntaxSupport[HubMessageMapping] {
 
   override val schemaName = Some("berner")
 
@@ -30,42 +30,42 @@ object HubMessageMappings extends SQLSyntaxSupport[HubMessageMappings] {
 
   override val columns = Seq("id", "guild_id", "source_guild_message_channel_id", "source_thread_message_channel_id", "source_message_id", "hub_guild_message_channel_id", "hub_message_id", "created_at", "updated_at", "deleted_at")
 
-  def apply(hmm: SyntaxProvider[HubMessageMappings])(rs: WrappedResultSet): HubMessageMappings = autoConstruct(rs, hmm)
-  def apply(hmm: ResultName[HubMessageMappings])(rs: WrappedResultSet): HubMessageMappings = autoConstruct(rs, hmm)
+  def apply(hmm: SyntaxProvider[HubMessageMapping])(rs: WrappedResultSet): HubMessageMapping = autoConstruct(rs, hmm)
+  def apply(hmm: ResultName[HubMessageMapping])(rs: WrappedResultSet): HubMessageMapping = autoConstruct(rs, hmm)
 
-  val hmm = HubMessageMappings.syntax("hmm")
+  val hmm = HubMessageMapping.syntax("hmm")
 
   override val autoSession = AutoSession
 
-  def find(id: Long)(implicit session: DBSession): Option[HubMessageMappings] = {
+  def find(id: Long)(implicit session: DBSession): Option[HubMessageMapping] = {
     withSQL {
-      select.from(HubMessageMappings as hmm).where.eq(hmm.id, id)
-    }.map(HubMessageMappings(hmm.resultName)).single.apply()
+      select.from(HubMessageMapping as hmm).where.eq(hmm.id, id)
+    }.map(HubMessageMapping(hmm.resultName)).single.apply()
   }
 
-  def findAll()(implicit session: DBSession): List[HubMessageMappings] = {
-    withSQL(select.from(HubMessageMappings as hmm)).map(HubMessageMappings(hmm.resultName)).list.apply()
+  def findAll()(implicit session: DBSession): List[HubMessageMapping] = {
+    withSQL(select.from(HubMessageMapping as hmm)).map(HubMessageMapping(hmm.resultName)).list.apply()
   }
 
   def countAll()(implicit session: DBSession): Long = {
-    withSQL(select(sqls.count).from(HubMessageMappings as hmm)).map(rs => rs.long(1)).single.apply().get
+    withSQL(select(sqls.count).from(HubMessageMapping as hmm)).map(rs => rs.long(1)).single.apply().get
   }
 
-  def findBy(where: SQLSyntax)(implicit session: DBSession): Option[HubMessageMappings] = {
+  def findBy(where: SQLSyntax)(implicit session: DBSession): Option[HubMessageMapping] = {
     withSQL {
-      select.from(HubMessageMappings as hmm).where.append(where)
-    }.map(HubMessageMappings(hmm.resultName)).single.apply()
+      select.from(HubMessageMapping as hmm).where.append(where)
+    }.map(HubMessageMapping(hmm.resultName)).single.apply()
   }
 
-  def findAllBy(where: SQLSyntax)(implicit session: DBSession): List[HubMessageMappings] = {
+  def findAllBy(where: SQLSyntax)(implicit session: DBSession): List[HubMessageMapping] = {
     withSQL {
-      select.from(HubMessageMappings as hmm).where.append(where)
-    }.map(HubMessageMappings(hmm.resultName)).list.apply()
+      select.from(HubMessageMapping as hmm).where.append(where)
+    }.map(HubMessageMapping(hmm.resultName)).list.apply()
   }
 
   def countBy(where: SQLSyntax)(implicit session: DBSession): Long = {
     withSQL {
-      select(sqls.count).from(HubMessageMappings as hmm).where.append(where)
+      select(sqls.count).from(HubMessageMapping as hmm).where.append(where)
     }.map(_.long(1)).single.apply().get
   }
 
@@ -78,9 +78,9 @@ object HubMessageMappings extends SQLSyntaxSupport[HubMessageMappings] {
     hubMessageId: String,
     createdAt: OffsetDateTime,
     updatedAt: OffsetDateTime,
-    deletedAt: Option[OffsetDateTime] = None)(implicit session: DBSession): HubMessageMappings = {
+    deletedAt: Option[OffsetDateTime] = None)(implicit session: DBSession): HubMessageMapping = {
     val generatedKey = withSQL {
-      insert.into(HubMessageMappings).namedValues(
+      insert.into(HubMessageMapping).namedValues(
         column.guildId -> guildId,
         column.sourceGuildMessageChannelId -> sourceGuildMessageChannelId,
         column.sourceThreadMessageChannelId -> sourceThreadMessageChannelId,
@@ -93,7 +93,7 @@ object HubMessageMappings extends SQLSyntaxSupport[HubMessageMappings] {
       )
     }.updateAndReturnGeneratedKey.apply()
 
-    HubMessageMappings(
+    HubMessageMapping(
       id = generatedKey,
       guildId = guildId,
       sourceGuildMessageChannelId = sourceGuildMessageChannelId,
@@ -106,7 +106,7 @@ object HubMessageMappings extends SQLSyntaxSupport[HubMessageMappings] {
       deletedAt = deletedAt)
   }
 
-  def batchInsert(entities: collection.Seq[HubMessageMappings])(implicit session: DBSession): List[Int] = {
+  def batchInsert(entities: collection.Seq[HubMessageMapping])(implicit session: DBSession): List[Int] = {
     val params: collection.Seq[Seq[(String, Any)]] = entities.map(entity =>
       Seq(
         "guildId" -> entity.guildId,
@@ -141,9 +141,9 @@ object HubMessageMappings extends SQLSyntaxSupport[HubMessageMappings] {
     )""").batchByName(params.toSeq: _*).apply[List]()
   }
 
-  def save(entity: HubMessageMappings)(implicit session: DBSession): HubMessageMappings = {
+  def save(entity: HubMessageMapping)(implicit session: DBSession): HubMessageMapping = {
     withSQL {
-      update(HubMessageMappings).set(
+      update(HubMessageMapping).set(
         column.id -> entity.id,
         column.guildId -> entity.guildId,
         column.sourceGuildMessageChannelId -> entity.sourceGuildMessageChannelId,
@@ -159,8 +159,8 @@ object HubMessageMappings extends SQLSyntaxSupport[HubMessageMappings] {
     entity
   }
 
-  def destroy(entity: HubMessageMappings)(implicit session: DBSession): Int = {
-    withSQL { delete.from(HubMessageMappings).where.eq(column.id, entity.id) }.update.apply()
+  def destroy(entity: HubMessageMapping)(implicit session: DBSession): Int = {
+    withSQL { delete.from(HubMessageMapping).where.eq(column.id, entity.id) }.update.apply()
   }
 
 }
