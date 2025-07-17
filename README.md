@@ -2,11 +2,6 @@
 
 ![berner](./berner.png)
 
-## About
-
-http4s（もといcats/cats effect）の素振りでDiscordのBotを書いていた。  
-が、ひどいことになったためJDAで書き直した。
-
 ## 機能
 
 ### hub
@@ -44,6 +39,15 @@ $ flyway -configFiles="flyway.sample.conf" migrate
 # Current version of schema `database_name`: << Empty Schema >>
 # Migrating schema `database_name` to version "1 - initial version"
 # Successfully applied 1 migration to schema `database_name`, now at version v1 (execution time 00:00.039s)
+```
+
+## DTOの生成
+
+scalikejdbcの設定 `project/scalikejdbc.properties.sample` を `project/scalikejdbc.properties` にコピーして環境に合わせて編集する。
+
+```
+sbt project database
+sbt scalikejdbcGenAll
 ```
 
 ## Discordの設定
