@@ -4,21 +4,21 @@ import scalikejdbc._
 import java.time.{OffsetDateTime}
 
 case class UserPublicKey(
-  id: Long,
-  userId: String,
-  keyValue: String,
-  keyAlgorithm: String,
-  keyType: String,
-  createdAt: OffsetDateTime,
-  updatedAt: OffsetDateTime,
-  deletedAt: Option[OffsetDateTime] = None) {
+    id: Long,
+    userId: String,
+    keyValue: String,
+    keyAlgorithm: String,
+    keyType: String,
+    createdAt: OffsetDateTime,
+    updatedAt: OffsetDateTime,
+    deletedAt: Option[OffsetDateTime] = None
+) {
 
   def save()(implicit session: DBSession): UserPublicKey = UserPublicKey.save(this)(session)
 
   def destroy()(implicit session: DBSession): Int = UserPublicKey.destroy(this)(session)
 
 }
-
 
 object UserPublicKey extends SQLSyntaxSupport[UserPublicKey] {
 
@@ -68,23 +68,26 @@ object UserPublicKey extends SQLSyntaxSupport[UserPublicKey] {
   }
 
   def create(
-    userId: String,
-    keyValue: String,
-    keyAlgorithm: String,
-    keyType: String,
-    createdAt: OffsetDateTime,
-    updatedAt: OffsetDateTime,
-    deletedAt: Option[OffsetDateTime] = None)(implicit session: DBSession): UserPublicKey = {
+      userId: String,
+      keyValue: String,
+      keyAlgorithm: String,
+      keyType: String,
+      createdAt: OffsetDateTime,
+      updatedAt: OffsetDateTime,
+      deletedAt: Option[OffsetDateTime] = None
+  )(implicit session: DBSession): UserPublicKey = {
     val generatedKey = withSQL {
-      insert.into(UserPublicKey).namedValues(
-        column.userId -> userId,
-        column.keyValue -> keyValue,
-        column.keyAlgorithm -> keyAlgorithm,
-        column.keyType -> keyType,
-        column.createdAt -> createdAt,
-        column.updatedAt -> updatedAt,
-        column.deletedAt -> deletedAt
-      )
+      insert
+        .into(UserPublicKey)
+        .namedValues(
+          column.userId -> userId,
+          column.keyValue -> keyValue,
+          column.keyAlgorithm -> keyAlgorithm,
+          column.keyType -> keyType,
+          column.createdAt -> createdAt,
+          column.updatedAt -> updatedAt,
+          column.deletedAt -> deletedAt
+        )
     }.updateAndReturnGeneratedKey.apply()
 
     UserPublicKey(
@@ -95,7 +98,8 @@ object UserPublicKey extends SQLSyntaxSupport[UserPublicKey] {
       keyType = keyType,
       createdAt = createdAt,
       updatedAt = updatedAt,
-      deletedAt = deletedAt)
+      deletedAt = deletedAt
+    )
   }
 
   def batchInsert(entities: collection.Seq[UserPublicKey])(implicit session: DBSession): List[Int] = {
@@ -107,7 +111,9 @@ object UserPublicKey extends SQLSyntaxSupport[UserPublicKey] {
         "keyType" -> entity.keyType,
         "createdAt" -> entity.createdAt,
         "updatedAt" -> entity.updatedAt,
-        "deletedAt" -> entity.deletedAt))
+        "deletedAt" -> entity.deletedAt
+      )
+    )
     SQL("""insert into user_public_keys(
       user_id,
       key_value,
@@ -129,16 +135,19 @@ object UserPublicKey extends SQLSyntaxSupport[UserPublicKey] {
 
   def save(entity: UserPublicKey)(implicit session: DBSession): UserPublicKey = {
     withSQL {
-      update(UserPublicKey).set(
-        column.id -> entity.id,
-        column.userId -> entity.userId,
-        column.keyValue -> entity.keyValue,
-        column.keyAlgorithm -> entity.keyAlgorithm,
-        column.keyType -> entity.keyType,
-        column.createdAt -> entity.createdAt,
-        column.updatedAt -> entity.updatedAt,
-        column.deletedAt -> entity.deletedAt
-      ).where.eq(column.id, entity.id)
+      update(UserPublicKey)
+        .set(
+          column.id -> entity.id,
+          column.userId -> entity.userId,
+          column.keyValue -> entity.keyValue,
+          column.keyAlgorithm -> entity.keyAlgorithm,
+          column.keyType -> entity.keyType,
+          column.createdAt -> entity.createdAt,
+          column.updatedAt -> entity.updatedAt,
+          column.deletedAt -> entity.deletedAt
+        )
+        .where
+        .eq(column.id, entity.id)
     }.update.apply()
     entity
   }

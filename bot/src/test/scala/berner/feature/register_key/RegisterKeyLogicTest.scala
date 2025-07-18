@@ -1,6 +1,6 @@
 package berner.feature.register_key
 
-import berner.model.register_key.UserPublicKey.UserPublicKeyType
+import database.extension.UserPublicKeyExtension.UserPublicKeyType
 import lib.TestBase
 
 class RegisterKeyLogicTest extends TestBase {

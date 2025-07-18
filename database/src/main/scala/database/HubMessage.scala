@@ -4,22 +4,22 @@ import scalikejdbc._
 import java.time.{OffsetDateTime}
 
 case class HubMessage(
-  id: Long,
-  sourceMessageId: String,
-  sourceChannelId: String,
-  messageId: String,
-  channelId: String,
-  guildId: String,
-  createdAt: OffsetDateTime,
-  updatedAt: OffsetDateTime,
-  deletedAt: Option[OffsetDateTime] = None) {
+    id: Long,
+    sourceMessageId: String,
+    sourceChannelId: String,
+    messageId: String,
+    channelId: String,
+    guildId: String,
+    createdAt: OffsetDateTime,
+    updatedAt: OffsetDateTime,
+    deletedAt: Option[OffsetDateTime] = None
+) {
 
   def save()(implicit session: DBSession): HubMessage = HubMessage.save(this)(session)
 
   def destroy()(implicit session: DBSession): Int = HubMessage.destroy(this)(session)
 
 }
-
 
 object HubMessage extends SQLSyntaxSupport[HubMessage] {
 
@@ -69,25 +69,28 @@ object HubMessage extends SQLSyntaxSupport[HubMessage] {
   }
 
   def create(
-    sourceMessageId: String,
-    sourceChannelId: String,
-    messageId: String,
-    channelId: String,
-    guildId: String,
-    createdAt: OffsetDateTime,
-    updatedAt: OffsetDateTime,
-    deletedAt: Option[OffsetDateTime] = None)(implicit session: DBSession): HubMessage = {
+      sourceMessageId: String,
+      sourceChannelId: String,
+      messageId: String,
+      channelId: String,
+      guildId: String,
+      createdAt: OffsetDateTime,
+      updatedAt: OffsetDateTime,
+      deletedAt: Option[OffsetDateTime] = None
+  )(implicit session: DBSession): HubMessage = {
     val generatedKey = withSQL {
-      insert.into(HubMessage).namedValues(
-        column.sourceMessageId -> sourceMessageId,
-        column.sourceChannelId -> sourceChannelId,
-        column.messageId -> messageId,
-        column.channelId -> channelId,
-        column.guildId -> guildId,
-        column.createdAt -> createdAt,
-        column.updatedAt -> updatedAt,
-        column.deletedAt -> deletedAt
-      )
+      insert
+        .into(HubMessage)
+        .namedValues(
+          column.sourceMessageId -> sourceMessageId,
+          column.sourceChannelId -> sourceChannelId,
+          column.messageId -> messageId,
+          column.channelId -> channelId,
+          column.guildId -> guildId,
+          column.createdAt -> createdAt,
+          column.updatedAt -> updatedAt,
+          column.deletedAt -> deletedAt
+        )
     }.updateAndReturnGeneratedKey.apply()
 
     HubMessage(
@@ -99,7 +102,8 @@ object HubMessage extends SQLSyntaxSupport[HubMessage] {
       guildId = guildId,
       createdAt = createdAt,
       updatedAt = updatedAt,
-      deletedAt = deletedAt)
+      deletedAt = deletedAt
+    )
   }
 
   def batchInsert(entities: collection.Seq[HubMessage])(implicit session: DBSession): List[Int] = {
@@ -112,7 +116,9 @@ object HubMessage extends SQLSyntaxSupport[HubMessage] {
         "guildId" -> entity.guildId,
         "createdAt" -> entity.createdAt,
         "updatedAt" -> entity.updatedAt,
-        "deletedAt" -> entity.deletedAt))
+        "deletedAt" -> entity.deletedAt
+      )
+    )
     SQL("""insert into hub_messages(
       source_message_id,
       source_channel_id,
@@ -136,17 +142,20 @@ object HubMessage extends SQLSyntaxSupport[HubMessage] {
 
   def save(entity: HubMessage)(implicit session: DBSession): HubMessage = {
     withSQL {
-      update(HubMessage).set(
-        column.id -> entity.id,
-        column.sourceMessageId -> entity.sourceMessageId,
-        column.sourceChannelId -> entity.sourceChannelId,
-        column.messageId -> entity.messageId,
-        column.channelId -> entity.channelId,
-        column.guildId -> entity.guildId,
-        column.createdAt -> entity.createdAt,
-        column.updatedAt -> entity.updatedAt,
-        column.deletedAt -> entity.deletedAt
-      ).where.eq(column.id, entity.id)
+      update(HubMessage)
+        .set(
+          column.id -> entity.id,
+          column.sourceMessageId -> entity.sourceMessageId,
+          column.sourceChannelId -> entity.sourceChannelId,
+          column.messageId -> entity.messageId,
+          column.channelId -> entity.channelId,
+          column.guildId -> entity.guildId,
+          column.createdAt -> entity.createdAt,
+          column.updatedAt -> entity.updatedAt,
+          column.deletedAt -> entity.deletedAt
+        )
+        .where
+        .eq(column.id, entity.id)
     }.update.apply()
     entity
   }

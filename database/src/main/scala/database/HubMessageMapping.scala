@@ -4,16 +4,17 @@ import scalikejdbc._
 import java.time.{OffsetDateTime}
 
 case class HubMessageMapping(
-  id: Long,
-  guildId: String,
-  sourceGuildMessageChannelId: String,
-  sourceThreadMessageChannelId: Option[String] = None,
-  sourceMessageId: String,
-  hubGuildMessageChannelId: String,
-  hubMessageId: String,
-  createdAt: OffsetDateTime,
-  updatedAt: OffsetDateTime,
-  deletedAt: Option[OffsetDateTime] = None) {
+    id: Long,
+    guildId: String,
+    sourceGuildMessageChannelId: String,
+    sourceThreadMessageChannelId: Option[String] = None,
+    sourceMessageId: String,
+    hubGuildMessageChannelId: String,
+    hubMessageId: String,
+    createdAt: OffsetDateTime,
+    updatedAt: OffsetDateTime,
+    deletedAt: Option[OffsetDateTime] = None
+) {
 
   def save()(implicit session: DBSession): HubMessageMapping = HubMessageMapping.save(this)(session)
 
@@ -21,14 +22,24 @@ case class HubMessageMapping(
 
 }
 
-
 object HubMessageMapping extends SQLSyntaxSupport[HubMessageMapping] {
 
   override val schemaName = Some("berner")
 
   override val tableName = "hub_message_mappings"
 
-  override val columns = Seq("id", "guild_id", "source_guild_message_channel_id", "source_thread_message_channel_id", "source_message_id", "hub_guild_message_channel_id", "hub_message_id", "created_at", "updated_at", "deleted_at")
+  override val columns = Seq(
+    "id",
+    "guild_id",
+    "source_guild_message_channel_id",
+    "source_thread_message_channel_id",
+    "source_message_id",
+    "hub_guild_message_channel_id",
+    "hub_message_id",
+    "created_at",
+    "updated_at",
+    "deleted_at"
+  )
 
   def apply(hmm: SyntaxProvider[HubMessageMapping])(rs: WrappedResultSet): HubMessageMapping = autoConstruct(rs, hmm)
   def apply(hmm: ResultName[HubMessageMapping])(rs: WrappedResultSet): HubMessageMapping = autoConstruct(rs, hmm)
@@ -70,27 +81,30 @@ object HubMessageMapping extends SQLSyntaxSupport[HubMessageMapping] {
   }
 
   def create(
-    guildId: String,
-    sourceGuildMessageChannelId: String,
-    sourceThreadMessageChannelId: Option[String] = None,
-    sourceMessageId: String,
-    hubGuildMessageChannelId: String,
-    hubMessageId: String,
-    createdAt: OffsetDateTime,
-    updatedAt: OffsetDateTime,
-    deletedAt: Option[OffsetDateTime] = None)(implicit session: DBSession): HubMessageMapping = {
+      guildId: String,
+      sourceGuildMessageChannelId: String,
+      sourceThreadMessageChannelId: Option[String] = None,
+      sourceMessageId: String,
+      hubGuildMessageChannelId: String,
+      hubMessageId: String,
+      createdAt: OffsetDateTime,
+      updatedAt: OffsetDateTime,
+      deletedAt: Option[OffsetDateTime] = None
+  )(implicit session: DBSession): HubMessageMapping = {
     val generatedKey = withSQL {
-      insert.into(HubMessageMapping).namedValues(
-        column.guildId -> guildId,
-        column.sourceGuildMessageChannelId -> sourceGuildMessageChannelId,
-        column.sourceThreadMessageChannelId -> sourceThreadMessageChannelId,
-        column.sourceMessageId -> sourceMessageId,
-        column.hubGuildMessageChannelId -> hubGuildMessageChannelId,
-        column.hubMessageId -> hubMessageId,
-        column.createdAt -> createdAt,
-        column.updatedAt -> updatedAt,
-        column.deletedAt -> deletedAt
-      )
+      insert
+        .into(HubMessageMapping)
+        .namedValues(
+          column.guildId -> guildId,
+          column.sourceGuildMessageChannelId -> sourceGuildMessageChannelId,
+          column.sourceThreadMessageChannelId -> sourceThreadMessageChannelId,
+          column.sourceMessageId -> sourceMessageId,
+          column.hubGuildMessageChannelId -> hubGuildMessageChannelId,
+          column.hubMessageId -> hubMessageId,
+          column.createdAt -> createdAt,
+          column.updatedAt -> updatedAt,
+          column.deletedAt -> deletedAt
+        )
     }.updateAndReturnGeneratedKey.apply()
 
     HubMessageMapping(
@@ -103,7 +117,8 @@ object HubMessageMapping extends SQLSyntaxSupport[HubMessageMapping] {
       hubMessageId = hubMessageId,
       createdAt = createdAt,
       updatedAt = updatedAt,
-      deletedAt = deletedAt)
+      deletedAt = deletedAt
+    )
   }
 
   def batchInsert(entities: collection.Seq[HubMessageMapping])(implicit session: DBSession): List[Int] = {
@@ -117,7 +132,9 @@ object HubMessageMapping extends SQLSyntaxSupport[HubMessageMapping] {
         "hubMessageId" -> entity.hubMessageId,
         "createdAt" -> entity.createdAt,
         "updatedAt" -> entity.updatedAt,
-        "deletedAt" -> entity.deletedAt))
+        "deletedAt" -> entity.deletedAt
+      )
+    )
     SQL("""insert into hub_message_mappings(
       guild_id,
       source_guild_message_channel_id,
@@ -143,18 +160,21 @@ object HubMessageMapping extends SQLSyntaxSupport[HubMessageMapping] {
 
   def save(entity: HubMessageMapping)(implicit session: DBSession): HubMessageMapping = {
     withSQL {
-      update(HubMessageMapping).set(
-        column.id -> entity.id,
-        column.guildId -> entity.guildId,
-        column.sourceGuildMessageChannelId -> entity.sourceGuildMessageChannelId,
-        column.sourceThreadMessageChannelId -> entity.sourceThreadMessageChannelId,
-        column.sourceMessageId -> entity.sourceMessageId,
-        column.hubGuildMessageChannelId -> entity.hubGuildMessageChannelId,
-        column.hubMessageId -> entity.hubMessageId,
-        column.createdAt -> entity.createdAt,
-        column.updatedAt -> entity.updatedAt,
-        column.deletedAt -> entity.deletedAt
-      ).where.eq(column.id, entity.id)
+      update(HubMessageMapping)
+        .set(
+          column.id -> entity.id,
+          column.guildId -> entity.guildId,
+          column.sourceGuildMessageChannelId -> entity.sourceGuildMessageChannelId,
+          column.sourceThreadMessageChannelId -> entity.sourceThreadMessageChannelId,
+          column.sourceMessageId -> entity.sourceMessageId,
+          column.hubGuildMessageChannelId -> entity.hubGuildMessageChannelId,
+          column.hubMessageId -> entity.hubMessageId,
+          column.createdAt -> entity.createdAt,
+          column.updatedAt -> entity.updatedAt,
+          column.deletedAt -> entity.deletedAt
+        )
+        .where
+        .eq(column.id, entity.id)
     }.update.apply()
     entity
   }

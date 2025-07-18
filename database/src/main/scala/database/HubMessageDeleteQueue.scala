@@ -4,19 +4,19 @@ import scalikejdbc._
 import java.time.{OffsetDateTime}
 
 case class HubMessageDeleteQueue(
-  id: Long,
-  hubMessageMappingId: Int,
-  status: Int,
-  createdAt: OffsetDateTime,
-  updatedAt: OffsetDateTime,
-  deletedAt: Option[OffsetDateTime] = None) {
+    id: Long,
+    hubMessageMappingId: Long,
+    status: Int,
+    createdAt: OffsetDateTime,
+    updatedAt: OffsetDateTime,
+    deletedAt: Option[OffsetDateTime] = None
+) {
 
   def save()(implicit session: DBSession): HubMessageDeleteQueue = HubMessageDeleteQueue.save(this)(session)
 
   def destroy()(implicit session: DBSession): Int = HubMessageDeleteQueue.destroy(this)(session)
 
 }
-
 
 object HubMessageDeleteQueue extends SQLSyntaxSupport[HubMessageDeleteQueue] {
 
@@ -65,20 +65,19 @@ object HubMessageDeleteQueue extends SQLSyntaxSupport[HubMessageDeleteQueue] {
     }.map(_.long(1)).single.apply().get
   }
 
-  def create(
-    hubMessageMappingId: Int,
-    status: Int,
-    createdAt: OffsetDateTime,
-    updatedAt: OffsetDateTime,
-    deletedAt: Option[OffsetDateTime] = None)(implicit session: DBSession): HubMessageDeleteQueue = {
+  def create(hubMessageMappingId: Long, status: Int, createdAt: OffsetDateTime, updatedAt: OffsetDateTime, deletedAt: Option[OffsetDateTime] = None)(implicit
+      session: DBSession
+  ): HubMessageDeleteQueue = {
     val generatedKey = withSQL {
-      insert.into(HubMessageDeleteQueue).namedValues(
-        column.hubMessageMappingId -> hubMessageMappingId,
-        column.status -> status,
-        column.createdAt -> createdAt,
-        column.updatedAt -> updatedAt,
-        column.deletedAt -> deletedAt
-      )
+      insert
+        .into(HubMessageDeleteQueue)
+        .namedValues(
+          column.hubMessageMappingId -> hubMessageMappingId,
+          column.status -> status,
+          column.createdAt -> createdAt,
+          column.updatedAt -> updatedAt,
+          column.deletedAt -> deletedAt
+        )
     }.updateAndReturnGeneratedKey.apply()
 
     HubMessageDeleteQueue(
@@ -87,7 +86,8 @@ object HubMessageDeleteQueue extends SQLSyntaxSupport[HubMessageDeleteQueue] {
       status = status,
       createdAt = createdAt,
       updatedAt = updatedAt,
-      deletedAt = deletedAt)
+      deletedAt = deletedAt
+    )
   }
 
   def batchInsert(entities: collection.Seq[HubMessageDeleteQueue])(implicit session: DBSession): List[Int] = {
@@ -97,7 +97,9 @@ object HubMessageDeleteQueue extends SQLSyntaxSupport[HubMessageDeleteQueue] {
         "status" -> entity.status,
         "createdAt" -> entity.createdAt,
         "updatedAt" -> entity.updatedAt,
-        "deletedAt" -> entity.deletedAt))
+        "deletedAt" -> entity.deletedAt
+      )
+    )
     SQL("""insert into hub_message_delete_queues(
       hub_message_mapping_id,
       status,
@@ -115,14 +117,17 @@ object HubMessageDeleteQueue extends SQLSyntaxSupport[HubMessageDeleteQueue] {
 
   def save(entity: HubMessageDeleteQueue)(implicit session: DBSession): HubMessageDeleteQueue = {
     withSQL {
-      update(HubMessageDeleteQueue).set(
-        column.id -> entity.id,
-        column.hubMessageMappingId -> entity.hubMessageMappingId,
-        column.status -> entity.status,
-        column.createdAt -> entity.createdAt,
-        column.updatedAt -> entity.updatedAt,
-        column.deletedAt -> entity.deletedAt
-      ).where.eq(column.id, entity.id)
+      update(HubMessageDeleteQueue)
+        .set(
+          column.id -> entity.id,
+          column.hubMessageMappingId -> entity.hubMessageMappingId,
+          column.status -> entity.status,
+          column.createdAt -> entity.createdAt,
+          column.updatedAt -> entity.updatedAt,
+          column.deletedAt -> entity.deletedAt
+        )
+        .where
+        .eq(column.id, entity.id)
     }.update.apply()
     entity
   }

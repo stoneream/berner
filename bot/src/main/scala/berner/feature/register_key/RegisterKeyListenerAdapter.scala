@@ -1,9 +1,9 @@
 package berner.feature.register_key
 
-import berner.database.UserPublicKeyWriter
 import berner.feature.register_key.RegisterKeyLogic.KeyParseError
 import berner.logging.Logger
-import berner.model.register_key.UserPublicKey
+import database.UserPublicKey
+import database.extension.UserPublicKeyExtension
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
@@ -63,7 +63,7 @@ class RegisterKeyListenerAdapter extends ListenerAdapter with Logger {
               DB localTx { implicit session =>
                 val now = OffsetDateTime.now()
                 // すでに存在する古い鍵は削除する
-                UserPublicKeyWriter.deleteByUserId(event.getUser.getId, now)(session)
+                UserPublicKeyExtension.deleteByUserId(event.getUser.getId, now)(session)
 
                 // 新しい鍵を登録
                 val upk = UserPublicKey(
@@ -76,7 +76,7 @@ class RegisterKeyListenerAdapter extends ListenerAdapter with Logger {
                   updatedAt = now,
                   deletedAt = None
                 )
-                UserPublicKeyWriter.write(upk :: Nil)(session)
+                UserPublicKeyExtension.write(upk :: Nil)(session)
               }
 
               event.reply("公開鍵の登録が完了しました。").setEphemeral(true).queue()

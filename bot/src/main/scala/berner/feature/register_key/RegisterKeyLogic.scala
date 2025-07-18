@@ -1,7 +1,7 @@
 package berner.feature.register_key
 
 import berner.logging.Logger
-import berner.model.register_key.UserPublicKey.{UserPublicKeyAlgorithm, UserPublicKeyType}
+import database.extension.UserPublicKeyExtension.{UserPublicKeyAlgorithm, UserPublicKeyType}
 import org.bouncycastle.crypto.params.{Ed25519PublicKeyParameters, RSAKeyParameters}
 import org.bouncycastle.crypto.util.{OpenSSHPublicKeyUtil, SubjectPublicKeyInfoFactory}
 import org.bouncycastle.jcajce.interfaces.EdDSAPublicKey

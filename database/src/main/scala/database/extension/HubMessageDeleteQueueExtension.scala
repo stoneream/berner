@@ -1,13 +1,31 @@
-package berner.database
+package database.extension
 
-import berner.model.hub.HubMessageDeleteQueue
 import scalikejdbc._
+import database.{HubMessageDeleteQueue, HubMessageMapping}
 
 import java.time.OffsetDateTime
 import scala.collection.IndexedSeq.iterableFactory
 
-object HubMessageDeleteQueueWriter {
+object HubMessageDeleteQueueExtension {
+  private val hmdq = HubMessageDeleteQueue.hmdq
+  private val hmm = HubMessageMapping.hmm
+
   private val column = HubMessageDeleteQueue.column
+
+  def pendings(limit: Int)(session: DBSession): List[(HubMessageDeleteQueue, HubMessageMapping)] = {
+    implicit val s: DBSession = session
+    withSQL {
+      select
+        .from(HubMessageDeleteQueue as hmdq)
+        .join(HubMessageMapping as hmm)
+        .on(sqls.eq(hmdq.hubMessageMappingId, hmm.id).and.isNull(hmm.deletedAt))
+        .where
+        .eq(hmdq.status, 0) // 削除待ち
+        .and
+        .eq(hmdq.deletedAt, null)
+        .limit(limit)
+    }.map(rs => (HubMessageDeleteQueue(hmdq.resultName)(rs), HubMessageMapping(hmm.resultName)(rs))).list.apply()
+  }
 
   def write(rows: List[HubMessageDeleteQueue])(session: DBSession): Unit = {
     implicit val s: DBSession = session
@@ -56,5 +74,4 @@ object HubMessageDeleteQueueWriter {
         .in(column.id, ids)
     }.update.apply()
   }
-
 }

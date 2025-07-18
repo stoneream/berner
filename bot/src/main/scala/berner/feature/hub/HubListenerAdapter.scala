@@ -1,10 +1,10 @@
 package berner.feature.hub
 
-import berner.database.{HubMessageDeleteQueueWriter, HubMessageMappingReader, HubMessageMappingWriter}
 import berner.logging.Logger
-import berner.model.hub.{HubMessageDeleteQueue, HubMessageMapping}
 import club.minnced.discord.webhook.external.JDAWebhookClient
 import club.minnced.discord.webhook.send.{WebhookEmbedBuilder, WebhookMessageBuilder}
+import database.{HubMessageDeleteQueue, HubMessageMapping}
+import database.extension.{HubMessageDeleteQueueExtension, HubMessageMappingExtension}
 import net.dv8tion.jda.api.entities.Mentions
 import net.dv8tion.jda.api.entities.Message.Attachment
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
@@ -178,7 +178,7 @@ class HubListenerAdapter extends ListenerAdapter with Logger {
             // DBに記録
             val now = OffsetDateTime.now()
             DB localTx { session =>
-              HubMessageMappingWriter.write(
+              HubMessageMappingExtension.write(
                 List(
                   HubMessageMapping(
                     id = 0,
@@ -212,7 +212,7 @@ class HubListenerAdapter extends ListenerAdapter with Logger {
 
       for {
         hmm <- DB.readOnly { session =>
-          HubMessageMappingReader.find(
+          HubMessageMappingExtension.find(
             sourceGuildMessageChannelId = guildMessageChannel.getId,
             sourceThreadMessageChannelId = threadChannelOpt.map(_.getId),
             sourceMessageId = sourceMessage.getId,
@@ -261,7 +261,7 @@ class HubListenerAdapter extends ListenerAdapter with Logger {
 
     for {
       hmm <- DB.readOnly { session =>
-        HubMessageMappingReader.find(
+        HubMessageMappingExtension.find(
           sourceGuildMessageChannelId = guildMessageChannel.getId,
           sourceThreadMessageChannelId = threadChannelOpt.map(_.getId),
           sourceMessageId = event.getMessageId,
@@ -271,7 +271,7 @@ class HubListenerAdapter extends ListenerAdapter with Logger {
     } yield {
       val now = OffsetDateTime.now()
       val row = HubMessageDeleteQueue(
-        id = 0,
+        id = 0L,
         hubMessageMappingId = hmm.id,
         status = 0, // pending
         createdAt = now,
@@ -280,7 +280,7 @@ class HubListenerAdapter extends ListenerAdapter with Logger {
       )
 
       DB.localTx { session =>
-        HubMessageDeleteQueueWriter.write(row :: Nil)(session)
+        HubMessageDeleteQueueExtension.write(row :: Nil)(session)
       }
 
       logger.info("メッセージの削除をキューイングしました。(hub_message_mapping_reader#id: %d)".format(hmm.id))
@@ -306,7 +306,7 @@ class HubListenerAdapter extends ListenerAdapter with Logger {
     val hubMessageMappings = threadChannelOpt.fold {
       // チャンネルを消した場合は直下のスレッドも対象
       DB.readOnly { session =>
-        HubMessageMappingReader.find(
+        HubMessageMappingExtension.find(
           sourceGuildMessageChannelId = guildMessageChannel.getId,
           guildId = sourceGuild.getId
         )(session)
@@ -314,7 +314,7 @@ class HubListenerAdapter extends ListenerAdapter with Logger {
     } { threadChannel =>
       // スレッドを消した場合はスレッドのみ
       DB.readOnly { session =>
-        HubMessageMappingReader.find(
+        HubMessageMappingExtension.find(
           sourceGuildMessageChannelId = guildMessageChannel.getId,
           sourceThreadMessageChannelId = threadChannel.getId,
           guildId = sourceGuild.getId
@@ -323,9 +323,9 @@ class HubListenerAdapter extends ListenerAdapter with Logger {
     }
 
     val now = OffsetDateTime.now()
-    val hmdq = hubMessageMappings.map { hmm =>
+    val rows = hubMessageMappings.map { hmm =>
       HubMessageDeleteQueue(
-        id = 0,
+        id = 0L,
         hubMessageMappingId = hmm.id,
         status = 0, // pending
         createdAt = now,
@@ -335,7 +335,7 @@ class HubListenerAdapter extends ListenerAdapter with Logger {
     }
 
     DB.localTx { session =>
-      HubMessageDeleteQueueWriter.write(hmdq)(session)
+      HubMessageDeleteQueueExtension.write(rows)(session)
     }
 
     logger.info("メッセージの削除をキューイングしました。(hub_message_mapping_reader#id: %s)".format(hubMessageMappings.map(_.id).mkString(", ")))

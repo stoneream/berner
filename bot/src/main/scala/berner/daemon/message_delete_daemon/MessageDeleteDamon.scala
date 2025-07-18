@@ -1,8 +1,8 @@
 package berner.daemon.message_delete_daemon
 
-import berner.database.{HubMessageDeleteQueueReader, HubMessageDeleteQueueWriter}
 import berner.logging.Logger
 import cats.effect.IO
+import database.extension.HubMessageDeleteQueueExtension
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.{JDA, JDABuilder}
 import scalikejdbc.DB
@@ -31,7 +31,7 @@ object MessageDeleteDamon extends Logger {
   private def execute(jda: JDA): IO[Unit] = {
     val deleteTask = IO {
       // 100件ずつ取得して削除
-      val rows = DB.localTx { s => HubMessageDeleteQueueReader.pendings(limit = 100)(s) }
+      val rows = DB.localTx { s => HubMessageDeleteQueueExtension.pendings(limit = 100)(s) }
 
       if (rows.isEmpty) {
         // do nothing
@@ -62,13 +62,13 @@ object MessageDeleteDamon extends Logger {
                 logger.error(s"メッセージの削除中にエラーが発生しました。${messageIds.size}", e)
                 val now = OffsetDateTime.now()
                 DB.localTx { s =>
-                  HubMessageDeleteQueueWriter.markFailedByMessageIds(queueIds, now)(s)
+                  HubMessageDeleteQueueExtension.markFailedByMessageIds(queueIds, now)(s)
                 }
               case Right(_) =>
                 logger.info(s"メッセージを削除しました。(${messageIds.size})")
                 val now = OffsetDateTime.now()
                 DB.localTx { s =>
-                  HubMessageDeleteQueueWriter.markDeleteByMessageIds(queueIds, now)(s)
+                  HubMessageDeleteQueueExtension.markDeleteByMessageIds(queueIds, now)(s)
                 }
             }
           }
