@@ -24,12 +24,12 @@ object MessageDeleteDamon extends Logger {
     } yield ()).foreverM
   }
 
-  private def preExecute(discordBotToken: String): IO[JDA] = IO {
+  private def preExecute(discordBotToken: String): IO[JDA] = IO.blocking {
     JDABuilder.createDefault(discordBotToken).build().awaitReady()
   }
 
   private def execute(jda: JDA): IO[Unit] = {
-    val deleteTask = IO {
+    val deleteTask = IO.blocking {
       // 100件ずつ取得して削除
       val rows = DB.localTx { s => HubMessageDeleteQueueExtension.pendings(limit = 100)(s) }
 

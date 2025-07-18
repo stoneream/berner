@@ -17,7 +17,7 @@ object HubDaemon {
     } yield ()).foreverM
   }
 
-  private def preExecute(discordBotToken: String): IO[JDA] = IO {
+  private def preExecute(discordBotToken: String): IO[JDA] = IO.blocking {
     JDABuilder
       .createDefault(discordBotToken)
       .enableIntents(GatewayIntent.MESSAGE_CONTENT)
@@ -31,7 +31,7 @@ object HubDaemon {
   }
 
   private def execute(jda: JDA): IO[Boolean] = {
-    IO {
+    IO.blocking {
       jda.awaitShutdown()
     }.guarantee(IO {
       val client = jda.getHttpClient
